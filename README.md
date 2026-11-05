@@ -9,7 +9,7 @@ npm i @moeinmnia80/motion
 
 ```tsx
 // once, in your root layout
-import "@moeinmnia80/motion/styles.css";
+import "@moeinmnia/motion/styles.css";
 ```
 
 ## How it works
@@ -50,13 +50,21 @@ Hooks (when you don't want an extra element):
 
 ```tsx
 const ref = useReveal<HTMLLIElement>({ variant: "left" });
-<li ref={ref} data-reveal="left">…</li>   // data-reveal in JSX = no flash before hydration
+<li ref={ref} data-reveal="left">
+  …
+</li>; // data-reveal in JSX = no flash before hydration
 ```
 
 ## Vanilla
 
 ```ts
-import { reveal, stagger, countUp, splitText, marquee } from "@moeinmnia80/motion/core";
+import {
+  reveal,
+  stagger,
+  countUp,
+  splitText,
+  marquee,
+} from "@moeinmnia80/motion/core";
 
 const stop = reveal(document.querySelector(".card")!, { variant: "zoom" });
 // stop() removes observers/listeners
