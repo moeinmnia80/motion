@@ -1,64 +1,28 @@
 {
-  "name": "@your-scope/motion",
+  "name": "@moeinmnia80/motion",
   "version": "0.1.0",
   "description": "Tiny, headless, dependency-free scroll & interaction animations. Vanilla core + thin React adapter.",
-  "keywords": [
-    "animation",
-    "scroll",
-    "reveal",
-    "intersection-observer",
-    "react",
-    "headless"
-  ],
+  "keywords": ["animation", "scroll", "reveal", "intersection-observer", "react", "headless"],
   "license": "MIT",
-  "author": "Your Name <you@example.com>",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/moeinmnia80/motion.git"
-  },
+  "author": "Moein Mohammadnia <moeinmnia80@users.noreply.github.com>",
+  "repository": { "type": "git", "url": "git+https://github.com/moeinmnia80/motion.git" },
   "homepage": "https://github.com/moeinmnia80/motion#readme",
-  "bugs": {
-    "url": "https://github.com/moeinmnia80/motion/issues"
-  },
+  "bugs": { "url": "https://github.com/moeinmnia80/motion/issues" },
   "type": "module",
-  "sideEffects": [
-    "**/*.css"
-  ],
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
+  "sideEffects": ["**/*.css"],
+  "files": ["dist", "README.md", "LICENSE"],
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/core/index.d.ts",
-        "default": "./dist/core/index.js"
-      },
-      "require": {
-        "types": "./dist/core/index.d.cts",
-        "default": "./dist/core/index.cjs"
-      }
+      "import": { "types": "./dist/core/index.d.ts", "default": "./dist/core/index.js" },
+      "require": { "types": "./dist/core/index.d.cts", "default": "./dist/core/index.cjs" }
     },
     "./core": {
-      "import": {
-        "types": "./dist/core/index.d.ts",
-        "default": "./dist/core/index.js"
-      },
-      "require": {
-        "types": "./dist/core/index.d.cts",
-        "default": "./dist/core/index.cjs"
-      }
+      "import": { "types": "./dist/core/index.d.ts", "default": "./dist/core/index.js" },
+      "require": { "types": "./dist/core/index.d.cts", "default": "./dist/core/index.cjs" }
     },
     "./react": {
-      "import": {
-        "types": "./dist/react/index.d.ts",
-        "default": "./dist/react/index.js"
-      },
-      "require": {
-        "types": "./dist/react/index.d.cts",
-        "default": "./dist/react/index.cjs"
-      }
+      "import": { "types": "./dist/react/index.d.ts", "default": "./dist/react/index.js" },
+      "require": { "types": "./dist/react/index.d.cts", "default": "./dist/react/index.cjs" }
     },
     "./styles.css": "./dist/motion.css",
     "./package.json": "./package.json"
@@ -70,14 +34,8 @@
     "size": "node scripts/size.mjs",
     "prepublishOnly": "npm run typecheck && npm run build"
   },
-  "peerDependencies": {
-    "react": ">=19"
-  },
-  "peerDependenciesMeta": {
-    "react": {
-      "optional": true
-    }
-  },
+  "peerDependencies": { "react": ">=19" },
+  "peerDependenciesMeta": { "react": { "optional": true } },
   "devDependencies": {
     "@types/react": "^19.0.0",
     "react": "^19.0.0",

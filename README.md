@@ -1,15 +1,15 @@
-# @your-scope/motion
+# @moeinmnia80/motion
 
 Tiny, headless, dependency-free scroll & interaction animations.
 Vanilla **core** (works anywhere) + thin **React** adapter. ~3 KB gzip core, ~1.5 KB gzip CSS.
 
 ```bash
-npm i @your-scope/motion
+npm i @moeinmnia80/motion
 ```
 
 ```tsx
 // once, in your root layout
-import "@your-scope/motion/styles.css";
+import "@moeinmnia80/motion/styles.css";
 ```
 
 ## How it works
@@ -23,7 +23,7 @@ One shared `IntersectionObserver` and one shared scroll listener serve every ele
 ```tsx
 import {
   Reveal, Stagger, CountUp, SplitText, Parallax, Tilt, Marquee, ScrollProgress,
-} from "@your-scope/motion/react";
+} from "@moeinmnia80/motion/react";
 
 <ScrollProgress className="text-primary" />
 
@@ -56,7 +56,7 @@ const ref = useReveal<HTMLLIElement>({ variant: "left" });
 ## Vanilla
 
 ```ts
-import { reveal, stagger, countUp, splitText, marquee } from "@your-scope/motion/core";
+import { reveal, stagger, countUp, splitText, marquee } from "@moeinmnia80/motion/core";
 
 const stop = reveal(document.querySelector(".card")!, { variant: "zoom" });
 // stop() removes observers/listeners

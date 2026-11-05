@@ -1,7 +1,7 @@
 /*
- * @your-scope/motion: optional default styles.
+ * @moeinmnia80/motion: optional default styles.
  * The core only sets data-* attributes and CSS variables; this file is the
- * (replaceable) look. Import it once:  import "@your-scope/motion/styles.css"
+ * (replaceable) look. Import it once:  import "@moeinmnia80/motion/styles.css"
  *
  * Theming variables (set on :root or on any element):
  *   --reveal-distance  --reveal-duration  --reveal-ease  --reveal-delay
