@@ -1,0 +1,173 @@
+/*
+ * @your-scope/motion: optional default styles.
+ * The core only sets data-* attributes and CSS variables; this file is the
+ * (replaceable) look. Import it once:  import "@your-scope/motion/styles.css"
+ *
+ * Theming variables (set on :root or on any element):
+ *   --reveal-distance  --reveal-duration  --reveal-ease  --reveal-delay
+ *   --split-step  --marquee-gap  --marquee-duration  --tilt-scale
+ */
+
+:root {
+  --reveal-distance: 24px;
+  --reveal-duration: 700ms;
+  --reveal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Hidden states only apply when JS is enabled, so content is never lost. */
+@media (scripting: enabled) {
+  /* ------------------------------ reveal ------------------------------ */
+  [data-reveal] {
+    opacity: 0;
+    transition:
+      opacity calc(var(--reveal-duration) * 0.85) ease,
+      transform var(--reveal-duration) var(--reveal-ease),
+      filter var(--reveal-duration) ease;
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+
+  [data-reveal="up"] {
+    transform: translate3d(0, var(--reveal-distance), 0);
+  }
+  [data-reveal="down"] {
+    transform: translate3d(0, calc(var(--reveal-distance) * -1), 0);
+  }
+  [data-reveal="left"] {
+    transform: translate3d(calc(var(--reveal-distance) * -1), 0, 0);
+  }
+  [data-reveal="right"] {
+    transform: translate3d(var(--reveal-distance), 0, 0);
+  }
+  [data-reveal="zoom"] {
+    transform: scale(0.92);
+  }
+  [data-reveal="blur"] {
+    filter: blur(12px); /* fun, but the most expensive variant: use sparingly */
+    transform: translate3d(0, calc(var(--reveal-distance) / 2), 0);
+  }
+  [data-reveal="flip"] {
+    transform-origin: 50% 100%;
+    transform: perspective(800px) rotateX(-18deg)
+      translate3d(0, calc(var(--reveal-distance) / 2), 0);
+  }
+
+  [data-reveal][data-inview="true"],
+  [data-stagger][data-inview="true"] [data-reveal] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+
+  /* ----------------------------- split text ----------------------------- */
+  [data-split] [data-split-unit] {
+    display: inline-block;
+    opacity: 0;
+    transform: translate3d(0, 0.6em, 0);
+    transition:
+      opacity 0.5s ease,
+      transform 0.7s var(--reveal-ease);
+    transition-delay: calc(var(--i, 0) * var(--split-step, 40ms));
+  }
+  [data-split][data-inview="true"] [data-split-unit] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+[data-split-word] {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* visually hidden copy for screen readers */
+[data-split-sr] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ------------------------------ parallax ------------------------------ */
+[data-parallax] {
+  transform: translate3d(var(--parallax-x, 0px), var(--parallax-y, 0px), 0);
+  will-change: transform;
+}
+
+/* -------------------------------- tilt -------------------------------- */
+[data-tilt] {
+  transform: perspective(var(--tilt-perspective, 800px))
+    rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg)) scale(1);
+  transition: transform 0.4s var(--reveal-ease);
+}
+[data-tilt][data-tilt-active="true"] {
+  transform: perspective(var(--tilt-perspective, 800px))
+    rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))
+    scale(var(--tilt-scale, 1.02));
+  transition: transform 0.12s linear;
+}
+
+/* ------------------------------- marquee ------------------------------- */
+[data-marquee] {
+  --marquee-gap: 1rem;
+  display: flex;
+  gap: var(--marquee-gap);
+  overflow: hidden;
+}
+[data-marquee-track] {
+  display: flex;
+  flex-shrink: 0;
+  min-width: 100%;
+  align-items: center;
+  justify-content: space-around;
+  gap: var(--marquee-gap);
+  animation: motion-marquee var(--marquee-duration, 20s) linear infinite;
+}
+[data-marquee][data-direction="right"] [data-marquee-track] {
+  animation-direction: reverse;
+}
+[data-marquee][data-pause]:hover [data-marquee-track] {
+  animation-play-state: paused;
+}
+@keyframes motion-marquee {
+  to {
+    transform: translate3d(calc(-100% - var(--marquee-gap)), 0, 0);
+  }
+}
+
+/* --------------------------- scroll progress --------------------------- */
+[data-scroll-progress-bar] {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  height: 3px;
+  background: currentColor;
+  transform-origin: 0 50%;
+  transform: scaleX(var(--progress, 0));
+  pointer-events: none;
+}
+
+/* ---------------------------- reduced motion ---------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal],
+  [data-split] [data-split-unit] {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+  [data-parallax],
+  [data-tilt] {
+    transform: none !important;
+  }
+  [data-marquee] {
+    overflow-x: auto;
+  }
+  [data-marquee-track] {
+    animation: none !important;
+  }
+  [data-scroll-progress-bar] {
+    display: none;
+  }
+}
