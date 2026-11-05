@@ -1,6 +1,6 @@
 {
   "name": "@moeinmnia/motion",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Tiny, headless, dependency-free scroll & interaction animations. Vanilla core + thin React adapter.",
   "keywords": [
     "animation",
