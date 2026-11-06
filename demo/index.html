@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>@moeinmnia/motion demo</title>
+  <link rel="stylesheet" href="../dist/motion.css" />
+  <style>
+    :root { color-scheme: dark; --spot-color: rgb(255 255 255 / .12); }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 16px/1.5 system-ui, sans-serif; background: #0b0b0f; color: #eee; }
+    nav { position: fixed; top: 12px; left: 50%; translate: -50% 0; z-index: 40; display: flex; gap: 4px;
+          padding: 6px; border-radius: 999px; background: #ffffff14; backdrop-filter: blur(8px); }
+    nav a { color: #fff9; text-decoration: none; padding: 6px 14px; border-radius: 999px; font-size: 13px; }
+    nav a[data-active="true"] { background: #fff; color: #000; }
+    section { min-height: 100vh; padding: 12vh 8vw; display: flex; flex-direction: column; justify-content: center; gap: 24px; }
+    h1 { font-size: clamp(40px, 8vw, 96px); line-height: .95; margin: 0; text-transform: uppercase; letter-spacing: -.02em; }
+    h2 { font-size: 13px; letter-spacing: .2em; text-transform: uppercase; color: #fff7; margin: 0; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .card { padding: 28px; border-radius: 20px; background: #ffffff0d; border: 1px solid #ffffff1a; min-height: 140px; }
+    .btn { padding: 14px 26px; border-radius: 999px; border: 0; background: #fff; color: #000; font-weight: 800; cursor: pointer; }
+    .big { font-size: clamp(28px, 4.5vw, 56px); font-weight: 800; line-height: 1.1; max-width: 22ch; }
+    .stat { font-size: 56px; font-weight: 900; font-variant-numeric: tabular-nums; }
+    .code { font-family: ui-monospace, monospace; font-size: 22px; }
+    .img { height: 280px; border-radius: 20px; background: linear-gradient(135deg,#7c3aed,#06b6d4); }
+    .layer { width: 140px; height: 140px; border-radius: 28px; background: #f43f5e; }
+    svg { width: 220px; height: 120px; stroke: #fff; fill: none; stroke-width: 3; }
+  </style>
+</head>
+<body>
+  <div id="bar" data-scroll-progress-bar style="color:#a78bfa"></div>
+  <div id="cursor"></div>
+
+  <nav id="nav">
+    <a href="#hero">Hero</a><a href="#reveal">Reveal</a><a href="#text">Text</a>
+    <a href="#hover">Hover</a><a href="#scroll">Scroll</a>
+  </nav>
+
+  <section id="hero">
+    <h2>@moeinmnia/motion</h2>
+    <h1 id="title">Tiny motion, big feel.</h1>
+    <p id="typed" style="max-width:48ch;color:#fffa">Headless, dependency-free and built on one shared observer.</p>
+  </section>
+
+  <section id="reveal">
+    <h2>reveal · stagger · clip</h2>
+    <div class="grid" id="list">
+      <div class="card">up</div><div class="card">up</div><div class="card">up</div><div class="card">up</div>
+    </div>
+    <div class="grid">
+      <div class="card" id="r1">zoom</div><div class="card" id="r2">blur</div>
+      <div class="card" id="r3">flip</div><div class="card" id="r4">rotate</div>
+      <div class="img" id="r5"></div>
+    </div>
+  </section>
+
+  <section id="text">
+    <h2>scramble · count · draw</h2>
+    <div class="code" id="scr">DECODING THE FUTURE_</div>
+    <div class="stat"><span id="c1"></span> &nbsp; <span id="c2"></span></div>
+    <div id="draw"><svg viewBox="0 0 220 120"><path d="M10 100 C60 10, 110 10, 140 60 S200 110, 210 20"/><circle cx="140" cy="60" r="10"/></svg></div>
+  </section>
+
+  <section id="hover">
+    <h2>magnetic · spotlight · tilt · ripple</h2>
+    <div class="grid" id="spot">
+      <div class="card">spotlight</div><div class="card">spotlight</div><div class="card">spotlight</div>
+    </div>
+    <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+      <span id="mag"><button class="btn">Magnetic</button></span>
+      <button class="btn" id="rip">Ripple</button>
+      <div class="card" id="tilt" style="width:240px">tilt</div>
+    </div>
+  </section>
+
+  <section id="scroll">
+    <h2>scroll fill · parallax · marquee</h2>
+    <p class="big" id="fill">Words light up one by one while you scroll, and it is fully reversible.</p>
+    <div style="display:flex;gap:24px"><div class="layer" id="p1"></div><div class="layer" id="p2" style="background:#22c55e"></div></div>
+    <div id="marq" style="font-size:40px;font-weight:900;color:#fff4;white-space:nowrap">
+      <span>REACT</span><span>NEXT.JS</span><span>TYPESCRIPT</span><span>TAILWIND</span><span>PRISMA</span>
+    </div>
+  </section>
+
+  <script type="module">
+    import * as M from "../dist/core/index.js";
+    const $ = (s) => document.querySelector(s);
+
+    M.scrollProgress($("#bar"));
+    M.cursor($("#cursor"));
+    M.scrollSpy($("#nav"));
+
+    M.splitText($("#title"), { by: "words", step: 70 });
+    M.typewriter($("#typed"), { speed: 28, delay: 500 });
+
+    M.stagger($("#list"), { step: 90 });
+    M.reveal($("#r1"), { variant: "zoom" });
+    M.reveal($("#r2"), { variant: "blur" });
+    M.reveal($("#r3"), { variant: "flip" });
+    M.reveal($("#r4"), { variant: "rotate" });
+    M.reveal($("#r5"), { variant: "clip-left", duration: 1100 });
+
+    M.scramble($("#scr"), { duration: 1400 });
+    M.countUp($("#c1"), { to: 12840, suffix: "+" });
+    M.countUp($("#c2"), { to: 4.9, format: { minimumFractionDigits: 1 }, prefix: "★ " });
+    M.drawSvg($("#draw"), { duration: 1800 });
+
+    M.spotlight($("#spot"), { selector: ".card" });
+    M.magnetic($("#mag"), { strength: 0.4, radius: 90 });
+    M.ripple($("#rip"), { color: "#000" });
+    M.tilt($("#tilt"), { max: 12 });
+
+    M.scrollFill($("#fill"));
+    M.parallax($("#p1"), { speed: 0.12 });
+    M.parallax($("#p2"), { speed: -0.1 });
+    M.marquee($("#marq"), { speed: 70, gap: 48 });
+  </script>
+</body>
+</html>

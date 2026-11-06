@@ -2,26 +2,43 @@ import type { ComponentProps, CSSProperties, ElementType } from "react";
 
 import type {
   CountUpOptions,
+  CursorOptions,
+  DrawSvgOptions,
+  MagneticOptions,
   MarqueeOptions,
   ObserveOptions,
   ParallaxOptions,
   RevealOptions,
+  RippleOptions,
+  ScrambleOptions,
+  ScrollFillOptions,
+  SpotlightOptions,
   StaggerOptions,
   TiltOptions,
+  TypewriterOptions,
 } from "../core";
 import {
   useCountUp,
+  useCursor,
+  useDrawSvg,
   useInView,
+  useMagnetic,
   useMarquee,
   useParallax,
   useReveal,
+  useRipple,
+  useScramble,
   useScrollProgress,
+  useSpotlight,
   useStagger,
   useTilt,
+  useTypewriter,
 } from "./hooks";
 
 type DivProps = Omit<ComponentProps<"div">, "ref">;
 type As = { as?: ElementType };
+type TextProps = Omit<ComponentProps<"p">, "ref" | "children"> &
+  As & { children: string };
 
 const vars = (v: Record<string, string | number>) => v as CSSProperties;
 
@@ -118,15 +135,30 @@ export const CountUp = ({
   );
 };
 
+/* ------------------------- split units (JSX, SSR-safe) ------------------------- */
+
+const renderUnits = (text: string, by: "words" | "chars") => {
+  let i = 0;
+  const nodes = text.split(/(\s+)/).map((part, w) =>
+    !part ? null : /^\s+$/.test(part) ? (
+      " "
+    ) : (
+      <span key={w} data-split-word="">
+        {(by === "chars" ? Array.from(part) : [part]).map((chunk, c) => (
+          <span key={c} data-split-unit="" style={vars({ "--i": i++ })}>
+            {chunk}
+          </span>
+        ))}
+      </span>
+    ),
+  );
+  return { nodes, count: i };
+};
+
 /* ------------------------------- SplitText ------------------------------- */
 
-type SplitTextProps = Omit<ComponentProps<"p">, "ref" | "children"> &
-  As &
-  ObserveOptions & {
-    children: string;
-    by?: "words" | "chars";
-    step?: number;
-  };
+type SplitTextProps = TextProps &
+  ObserveOptions & { by?: "words" | "chars"; step?: number };
 
 /** Pure JSX (no DOM mutation), so it is SSR/hydration safe. */
 export const SplitText = ({
@@ -142,7 +174,7 @@ export const SplitText = ({
 }: SplitTextProps) => {
   const ref = useInView({ threshold, rootMargin, once });
   const Tag: ElementType = as ?? "p";
-  let i = 0;
+  const { nodes } = renderUnits(children, by);
 
   return (
     <Tag
@@ -152,21 +184,91 @@ export const SplitText = ({
       {...props}
     >
       <span data-split-sr="">{children}</span>
-      <span aria-hidden="true">
-        {children.split(/(\s+)/).map((part, w) =>
-          !part ? null : /^\s+$/.test(part) ? (
-            " "
-          ) : (
-            <span key={w} data-split-word="">
-              {(by === "chars" ? Array.from(part) : [part]).map((chunk, c) => (
-                <span key={c} data-split-unit="" style={vars({ "--i": i++ })}>
-                  {chunk}
-                </span>
-              ))}
-            </span>
-          ),
-        )}
-      </span>
+      <span aria-hidden="true">{nodes}</span>
+    </Tag>
+  );
+};
+
+/* ------------------------------- ScrollFill ------------------------------- */
+
+type ScrollFillProps = TextProps & ScrollFillOptions;
+
+/** Words light up as you scroll. Units are rendered in JSX; only --progress is written by JS. */
+export const ScrollFill = ({
+  as,
+  children,
+  start = 0.85,
+  end = 0.35,
+  style,
+  ...props
+}: ScrollFillProps) => {
+  const ref = useScrollProgress({ mode: "element", start, end });
+  const Tag: ElementType = as ?? "p";
+  const { nodes, count } = renderUnits(children, "words");
+
+  return (
+    <Tag
+      ref={ref}
+      data-scroll-fill=""
+      style={{ ...vars({ "--n": count }), ...style }}
+      {...props}
+    >
+      <span data-split-sr="">{children}</span>
+      <span aria-hidden="true">{nodes}</span>
+    </Tag>
+  );
+};
+
+/* ------------------------------ Scramble / Typewriter ------------------------------ */
+
+export const Scramble = ({
+  as,
+  children,
+  duration,
+  chars,
+  trigger,
+  threshold,
+  rootMargin,
+  ...props
+}: TextProps & Omit<ScrambleOptions, "text">) => {
+  const ref = useScramble({
+    text: children,
+    duration,
+    chars,
+    trigger,
+    threshold,
+    rootMargin,
+  });
+  const Tag: ElementType = as ?? "span";
+  return (
+    <Tag ref={ref} {...props}>
+      {children}
+    </Tag>
+  );
+};
+
+export const Typewriter = ({
+  as,
+  children,
+  speed,
+  delay,
+  caret,
+  threshold,
+  rootMargin,
+  ...props
+}: TextProps & Omit<TypewriterOptions, "text">) => {
+  const ref = useTypewriter({
+    text: children,
+    speed,
+    delay,
+    caret,
+    threshold,
+    rootMargin,
+  });
+  const Tag: ElementType = as ?? "span";
+  return (
+    <Tag ref={ref} {...props}>
+      {children}
     </Tag>
   );
 };
@@ -187,7 +289,7 @@ export const Parallax = ({
   );
 };
 
-/* ---------------------------------- Tilt ---------------------------------- */
+/* -------------------------- Tilt / Magnetic / Spotlight / Ripple -------------------------- */
 
 export const Tilt = ({
   max,
@@ -201,6 +303,54 @@ export const Tilt = ({
     <div ref={ref} data-tilt="" {...props}>
       {children}
     </div>
+  );
+};
+
+export const Magnetic = ({
+  as,
+  strength,
+  radius,
+  stiffness,
+  damping,
+  children,
+  ...props
+}: DivProps & As & MagneticOptions) => {
+  const ref = useMagnetic({ strength, radius, stiffness, damping });
+  const Tag: ElementType = as ?? "div";
+  return (
+    <Tag ref={ref} data-magnetic="" {...props}>
+      {children}
+    </Tag>
+  );
+};
+
+export const Spotlight = ({
+  selector,
+  children,
+  ...props
+}: DivProps & SpotlightOptions) => {
+  const ref = useSpotlight({ selector });
+  return (
+    <div ref={ref} data-spotlight="" {...props}>
+      {children}
+    </div>
+  );
+};
+
+/** `<Ripple as="button" className="…">Click</Ripple>` */
+export const Ripple = ({
+  as,
+  color,
+  duration,
+  children,
+  ...props
+}: DivProps & As & RippleOptions) => {
+  const ref = useRipple({ color, duration });
+  const Tag: ElementType = as ?? "div";
+  return (
+    <Tag ref={ref} data-ripple="" {...props}>
+      {children}
+    </Tag>
   );
 };
 
@@ -231,10 +381,41 @@ export const Marquee = ({
   );
 };
 
-/* ----------------------------- ScrollProgress ----------------------------- */
+/* ---------------------------------- Draw SVG ---------------------------------- */
+
+/** Wrap an inline <svg>: its strokes draw in when visible. */
+export const Draw = ({
+  step,
+  duration,
+  threshold,
+  rootMargin,
+  once,
+  children,
+  ...props
+}: DivProps & DrawSvgOptions) => {
+  const ref = useDrawSvg({ step, duration, threshold, rootMargin, once });
+  return (
+    <div ref={ref} data-draw="" {...props}>
+      {children}
+    </div>
+  );
+};
+
+/* ------------------------- ScrollProgress / Cursor ------------------------- */
 
 /** Fixed top bar that fills as the page scrolls. Colour = currentColor. */
 export const ScrollProgress = (props: DivProps) => {
   const ref = useScrollProgress<HTMLDivElement>({ mode: "page" });
   return <div ref={ref} data-scroll-progress-bar="" aria-hidden="true" {...props} />;
+};
+
+/** Render once in your layout. Native cursor stays; hide it yourself with CSS if you want. */
+export const Cursor = ({
+  stiffness,
+  damping,
+  hoverSelector,
+  ...props
+}: DivProps & CursorOptions) => {
+  const ref = useCursor<HTMLDivElement>({ stiffness, damping, hoverSelector });
+  return <div ref={ref} data-cursor="" aria-hidden="true" {...props} />;
 };

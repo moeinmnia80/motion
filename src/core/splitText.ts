@@ -1,34 +1,22 @@
+import { a11yText } from "./a11y";
 import { inview } from "./inview";
 import type { ObserveOptions } from "./observer";
 import type { Cleanup } from "./utils";
 
+export type SplitBy = "words" | "chars";
+
 export type SplitTextOptions = ObserveOptions & {
-  by?: "words" | "chars";
+  by?: SplitBy;
   /** ms between units */
   step?: number;
 };
 
-/**
- * Splits the element's text into animatable units.
- * Accessible: screen readers get the original text (visually hidden copy),
- * the animated units are aria-hidden.
- */
-export const splitText = (
-  el: HTMLElement,
-  { by = "words", step = 40, ...io }: SplitTextOptions = {},
-): Cleanup | void => {
-  const original = el.textContent ?? "";
-  if (!original.trim()) return;
-
-  const sr = document.createElement("span");
-  sr.dataset.splitSr = "";
-  sr.textContent = original;
-
-  const visual = document.createElement("span");
-  visual.setAttribute("aria-hidden", "true");
-
+/** Builds the accessible split structure. Units get a --i index. Shared by splitText & scrollFill. */
+export const splitInto = (el: HTMLElement, text: string, by: SplitBy) => {
+  const { visual, restore } = a11yText(el, text);
   let i = 0;
-  for (const part of original.split(/(\s+)/)) {
+
+  for (const part of text.split(/(\s+)/)) {
     if (!part) continue;
     if (/^\s+$/.test(part)) {
       visual.append(" ");
@@ -36,8 +24,7 @@ export const splitText = (
     }
     const word = document.createElement("span");
     word.dataset.splitWord = "";
-    const chunks = by === "chars" ? Array.from(part) : [part];
-    for (const chunk of chunks) {
+    for (const chunk of by === "chars" ? Array.from(part) : [part]) {
       const unit = document.createElement("span");
       unit.dataset.splitUnit = "";
       unit.style.setProperty("--i", String(i++));
@@ -47,13 +34,27 @@ export const splitText = (
     visual.append(word);
   }
 
-  el.replaceChildren(sr, visual);
+  return { count: i, restore };
+};
+
+/**
+ * Splits the element's text into animatable units (words or characters).
+ * Screen readers get the original text; the animated units are aria-hidden.
+ */
+export const splitText = (
+  el: HTMLElement,
+  { by = "words", step = 40, ...io }: SplitTextOptions = {},
+): Cleanup | void => {
+  const original = el.textContent ?? "";
+  if (!original.trim()) return;
+
+  const { restore } = splitInto(el, original, by);
   el.dataset.split = by;
   el.style.setProperty("--split-step", `${step}ms`);
 
   const stop = inview(el, io);
   return () => {
     stop();
-    el.textContent = original;
+    restore();
   };
 };

@@ -1,11 +1,13 @@
 /*
- * @moeinmnia80/motion: optional default styles.
+ * @moeinmnia/motion: optional default styles.
  * The core only sets data-* attributes and CSS variables; this file is the
- * (replaceable) look. Import it once:  import "@moeinmnia80/motion/styles.css"
+ * (replaceable) look. Import it once:  import "@moeinmnia/motion/styles.css"
  *
  * Theming variables (set on :root or on any element):
  *   --reveal-distance  --reveal-duration  --reveal-ease  --reveal-delay
- *   --split-step  --marquee-gap  --marquee-duration  --tilt-scale
+ *   --split-step  --draw-duration  --draw-step
+ *   --marquee-gap  --marquee-duration  --tilt-scale
+ *   --spot-size  --spot-color  --ripple-color  --cursor-size  --fill-min
  */
 
 :root {
@@ -22,7 +24,8 @@
     transition:
       opacity calc(var(--reveal-duration) * 0.85) ease,
       transform var(--reveal-duration) var(--reveal-ease),
-      filter var(--reveal-duration) ease;
+      filter var(--reveal-duration) ease,
+      clip-path var(--reveal-duration) var(--reveal-ease);
     transition-delay: var(--reveal-delay, 0ms);
   }
 
@@ -50,12 +53,33 @@
     transform: perspective(800px) rotateX(-18deg)
       translate3d(0, calc(var(--reveal-distance) / 2), 0);
   }
+  [data-reveal="rotate"] {
+    transform-origin: 0 100%;
+    transform: rotate(-6deg) translate3d(0, calc(var(--reveal-distance) / 2), 0)
+      scale(0.96);
+  }
+  [data-reveal="skew"] {
+    transform: skewY(6deg) translate3d(0, var(--reveal-distance), 0);
+  }
+  /* wipes: great for images/cards (note: clip-path also clips box-shadow) */
+  [data-reveal="clip-up"] {
+    opacity: 1;
+    clip-path: inset(100% 0 0 0);
+  }
+  [data-reveal="clip-left"] {
+    opacity: 1;
+    clip-path: inset(0 100% 0 0);
+  }
 
   [data-reveal][data-inview="true"],
   [data-stagger][data-inview="true"] [data-reveal] {
     opacity: 1;
     transform: none;
     filter: none;
+  }
+  [data-reveal^="clip"][data-inview="true"],
+  [data-stagger][data-inview="true"] [data-reveal^="clip"] {
+    clip-path: inset(0 0 0 0);
   }
 
   /* ----------------------------- split text ----------------------------- */
@@ -72,8 +96,21 @@
     opacity: 1;
     transform: none;
   }
+
+  /* ------------------------------ draw svg ------------------------------ */
+  [data-draw] :is(path, line, polyline, polygon, circle, ellipse, rect) {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset var(--draw-duration, 1.6s) var(--reveal-ease);
+    transition-delay: calc(var(--draw-i, 0) * var(--draw-step, 120ms));
+  }
+  [data-draw][data-inview="true"]
+    :is(path, line, polyline, polygon, circle, ellipse, rect) {
+    stroke-dashoffset: 0;
+  }
 }
 
+/* --------------------------- split text (always) --------------------------- */
 [data-split-word] {
   display: inline-block;
   white-space: nowrap;
@@ -89,10 +126,47 @@
   white-space: nowrap;
 }
 
+/* ----------------------------- scroll fill ----------------------------- */
+/* word i lights up when --progress passes i/(n+1): all maths in CSS, no JS per word */
+[data-scroll-fill] [data-split-unit] {
+  opacity: clamp(
+    var(--fill-min, 0.15),
+    calc(var(--progress, 0) * (var(--n, 1) + 1) - var(--i, 0)),
+    1
+  );
+}
+
+/* ------------------------------ typewriter ------------------------------ */
+[data-typewriter][data-caret] [data-typed]::after {
+  content: "";
+  display: inline-block;
+  width: 0.08em;
+  height: 1em;
+  margin-left: 0.06em;
+  vertical-align: -0.12em;
+  background: currentColor;
+  animation: motion-blink 1s steps(1) infinite;
+}
+[data-typewriter][data-typing="true"] [data-typed]::after {
+  animation: none; /* solid while typing */
+}
+@keyframes motion-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
 /* ------------------------------ parallax ------------------------------ */
+/* uses the individual `translate` property, so it composes with reveal's `transform` */
 [data-parallax] {
-  transform: translate3d(var(--parallax-x, 0px), var(--parallax-y, 0px), 0);
-  will-change: transform;
+  translate: var(--parallax-x, 0px) var(--parallax-y, 0px);
+  will-change: translate;
+}
+
+/* ------------------------------ magnetic ------------------------------ */
+[data-magnetic] {
+  display: inline-block;
+  translate: var(--mx, 0px) var(--my, 0px);
 }
 
 /* -------------------------------- tilt -------------------------------- */
@@ -106,6 +180,87 @@
     rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))
     scale(var(--tilt-scale, 1.02));
   transition: transform 0.12s linear;
+}
+
+/* ------------------------------ spotlight ------------------------------ */
+[data-spotlight-item] {
+  position: relative;
+  isolation: isolate;
+}
+[data-spotlight-item]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    var(--spot-size, 320px) circle at var(--spot-x, 50%) var(--spot-y, 50%),
+    var(--spot-color, rgb(255 255 255 / 0.14)),
+    transparent 70%
+  );
+}
+[data-spotlight][data-spot-active="true"] [data-spotlight-item]::before,
+[data-spotlight][data-spotlight-item][data-spot-active="true"]::before {
+  opacity: 1;
+}
+
+/* -------------------------------- ripple -------------------------------- */
+[data-ripple] {
+  position: relative;
+  overflow: hidden;
+}
+[data-ripple-wave] {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--ripple-color, currentColor);
+  opacity: 0.25;
+  transform: translate(-50%, -50%) scale(0);
+  animation: motion-ripple var(--ripple-duration, 600ms) ease-out forwards;
+  pointer-events: none;
+}
+@keyframes motion-ripple {
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+/* -------------------------------- cursor -------------------------------- */
+[data-cursor] {
+  --cursor-size: 14px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  width: var(--cursor-size);
+  height: var(--cursor-size);
+  margin: calc(var(--cursor-size) / -2) 0 0 calc(var(--cursor-size) / -2);
+  border-radius: 50%;
+  background: currentColor;
+  mix-blend-mode: difference;
+  color: #fff;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    scale 0.25s var(--reveal-ease);
+}
+[data-cursor][data-cursor-visible="true"] {
+  opacity: 1;
+}
+[data-cursor][data-cursor-hover="true"] {
+  scale: 3.2;
+}
+[data-cursor][data-cursor-down="true"] {
+  scale: 0.8;
+}
+@media (hover: none) {
+  [data-cursor] {
+    display: none;
+  }
 }
 
 /* ------------------------------- marquee ------------------------------- */
@@ -155,18 +310,32 @@
     opacity: 1 !important;
     transform: none !important;
     filter: none !important;
+    clip-path: none !important;
     transition: none !important;
   }
+  [data-draw] :is(path, line, polyline, polygon, circle, ellipse, rect) {
+    stroke-dashoffset: 0 !important;
+    transition: none !important;
+  }
+  [data-scroll-fill] [data-split-unit] {
+    opacity: 1 !important;
+  }
   [data-parallax],
+  [data-magnetic] {
+    translate: none !important;
+  }
   [data-tilt] {
     transform: none !important;
   }
   [data-marquee] {
     overflow-x: auto;
   }
-  [data-marquee-track] {
+  [data-marquee-track],
+  [data-typewriter] [data-typed]::after {
     animation: none !important;
   }
+  [data-ripple-wave],
+  [data-cursor],
   [data-scroll-progress-bar] {
     display: none;
   }

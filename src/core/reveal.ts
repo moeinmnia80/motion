@@ -9,7 +9,11 @@ export type RevealVariant =
   | "zoom"
   | "fade"
   | "blur"
-  | "flip";
+  | "flip"
+  | "rotate"
+  | "skew"
+  | "clip-up"
+  | "clip-left";
 
 export type RevealOptions = ObserveOptions & {
   variant?: RevealVariant;
