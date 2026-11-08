@@ -1,6 +1,6 @@
 {
   "name": "@moeinmnia/motion",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "description": "Tiny, headless, dependency-free scroll & interaction animations: reveal, stagger, split/scramble/typewriter text, scroll-scrubbed effects, horizontal scroll, SVG draw, magnetic, spotlight, parallax, cursor, scroll-spy. Vanilla core + thin React adapter.",
   "keywords": [
     "animation",
