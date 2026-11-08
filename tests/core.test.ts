@@ -3,7 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   countUp,
   drawSvg,
+  highlight,
+  hscroll,
   magnetic,
+  onScrollFrame,
+  parallax,
   observe,
   reveal,
   ripple,
@@ -11,6 +15,7 @@ import {
   scrollFill,
   scrollProgress,
   scrollSpy,
+  scrub,
   spring,
   splitText,
   stagger,
@@ -39,6 +44,22 @@ class MockIO {
     return [];
   }
 }
+class MockRO {
+  static all: MockRO[] = [];
+  constructor(public cb: () => void) {
+    MockRO.all.push(this);
+  }
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+/** simulate a layout change (size / page height) */
+const resized = () => MockRO.all.forEach((r) => r.cb());
+const scrollTo = (y: number) => {
+  Object.defineProperty(window, "scrollY", { configurable: true, value: y });
+  window.dispatchEvent(new Event("scroll"));
+};
+
 const fire = (el: Element, isIntersecting = true) => {
   const io = MockIO.all.find((o) => o.els.has(el));
   if (!io) throw new Error("element is not observed");
@@ -75,6 +96,9 @@ beforeEach(() => {
   frames = [];
   setMedia({});
   vi.stubGlobal("IntersectionObserver", MockIO);
+  vi.stubGlobal("ResizeObserver", MockRO);
+  MockRO.all = [];
+  Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
   vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
     frames.push(cb);
     return frames.length;
@@ -83,7 +107,10 @@ beforeEach(() => {
   vi.spyOn(performance, "now").mockImplementation(() => now);
   document.body.innerHTML = "";
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  advance(32); // flush pending frames so the shared scheduler is idle for the next test
+  vi.unstubAllGlobals();
+});
 
 const el = (html = "") => {
   const d = document.createElement("div");
@@ -112,6 +139,20 @@ describe("observer pool", () => {
     fire(a, true);
     expect(cb).toHaveBeenCalledTimes(1);
     expect(MockIO.all.some((o) => o.els.has(a))).toBe(false);
+  });
+});
+
+describe("observer pool (shared elements)", () => {
+  it("lets several effects watch the same element without overriding each other", () => {
+    const a = el();
+    const one = vi.fn();
+    const two = vi.fn();
+    const stopOne = observe(a, one);
+    observe(a, two);
+    fire(a);
+    expect(one).toHaveBeenCalledTimes(1);
+    expect(two).toHaveBeenCalledTimes(1);
+    stopOne();
   });
 });
 
@@ -261,6 +302,22 @@ describe("scrollSpy", () => {
   });
 });
 
+describe("scroll scheduler", () => {
+  it("runs every read before any write within a frame", () => {
+    const log: string[] = [];
+    const mk = (n: string) => () => {
+      log.push(`read ${n}`);
+      return () => log.push(`write ${n}`);
+    };
+    const s1 = onScrollFrame(mk("a"));
+    const s2 = onScrollFrame(mk("b"));
+    advance(20);
+    expect(log.slice(0, 4)).toEqual(["read a", "read b", "write a", "write b"]);
+    s1();
+    s2();
+  });
+});
+
 describe("scroll-driven (scrollProgress / scrollFill)", () => {
   const rect = (node: HTMLElement, top: number, height: number) =>
     vi.spyOn(node, "getBoundingClientRect").mockReturnValue({
@@ -279,21 +336,71 @@ describe("scroll-driven (scrollProgress / scrollFill)", () => {
     Object.defineProperty(window, "innerHeight", { configurable: true, value: 1000 });
   });
 
-  it("element mode with start/end maps correctly (0 → 1)", () => {
+  it("element mode with start/end maps correctly (0 → 1) using cached geometry", () => {
     const n = el();
+    // document position: top 800, height 200 (measured once, at scrollY = 0)
+    const spy = rect(n, 800, 200);
     const stop = scrollProgress(n, { mode: "element", start: 0.8, end: 0.4 });
-    // height 200: progress 0 when top = 800, progress 1 when bottom = 400 (top = 200)
-    rect(n, 800, 200);
     advance(20);
-    expect(n.style.getPropertyValue("--progress")).toBe("0.0000");
-    rect(n, 500, 200);
-    window.dispatchEvent(new Event("scroll"));
+    expect(n.style.getPropertyValue("--progress")).toBe("0.000");
+    scrollTo(300); // element top now at 500 → halfway
     advance(20);
     expect(Number(n.style.getPropertyValue("--progress"))).toBeCloseTo(0.5, 2);
-    rect(n, 200, 200);
-    window.dispatchEvent(new Event("scroll"));
+    scrollTo(600); // top at 200 → bottom at 400 → done
     advance(20);
-    expect(n.style.getPropertyValue("--progress")).toBe("1.0000");
+    expect(n.style.getPropertyValue("--progress")).toBe("1.000");
+    expect(spy).toHaveBeenCalledTimes(1); // no layout read while scrolling
+    stop();
+  });
+
+  it("re-measures only when the layout changes", () => {
+    const n = el();
+    const spy = rect(n, 800, 200);
+    const stop = scrollProgress(n, { mode: "element", start: 0.8, end: 0.4 });
+    advance(20);
+    rect(n, 400, 200).mockClear();
+    resized(); // e.g. images loaded above the element
+    advance(20);
+    expect(n.style.getPropertyValue("--progress")).not.toBe("0.000");
+    expect(spy).toBeDefined();
+    stop();
+  });
+
+  it("does not write when the value did not change", () => {
+    const n = el();
+    rect(n, 5000, 200); // far below the viewport
+    const set = vi.spyOn(n.style, "setProperty");
+    const stop = scrollProgress(n, { mode: "element" });
+    advance(20);
+    scrollTo(10);
+    advance(20);
+    scrollTo(20);
+    advance(20);
+    expect(set).toHaveBeenCalledTimes(1); // only the first 0.000
+    stop();
+  });
+
+  it("never produces NaN for a degenerate range", () => {
+    const n = el();
+    rect(n, 0, 1000); // hscroll with a single panel: height == viewport
+    const stop = scrollProgress(n, { mode: "element", start: 0, end: 1 });
+    advance(20);
+    expect(n.style.getPropertyValue("--progress")).not.toContain("NaN");
+    stop();
+  });
+
+  it("page mode follows the document scroll", () => {
+    const n = el();
+    Object.defineProperty(document.documentElement, "scrollHeight", {
+      configurable: true,
+      value: 3000,
+    });
+    const stop = scrollProgress(n, { mode: "page" });
+    advance(20);
+    expect(n.style.getPropertyValue("--progress")).toBe("0.000");
+    scrollTo(1000); // max scroll = 3000 - 1000
+    advance(20);
+    expect(n.style.getPropertyValue("--progress")).toBe("0.500");
     stop();
   });
 
@@ -304,6 +411,93 @@ describe("scroll-driven (scrollProgress / scrollFill)", () => {
     expect(p.dataset.scrollFill).toBeDefined();
     stop();
     expect(p.textContent).toBe("one two three four");
+  });
+});
+
+describe("scrub / highlight / hscroll", () => {
+  beforeEach(() => {
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 1000 });
+  });
+
+  it("scrub sets the effect and drives --progress", () => {
+    const n = el();
+    vi.spyOn(n, "getBoundingClientRect").mockReturnValue({ top: 2000, height: 100 } as DOMRect);
+    const stop = scrub(n, { effect: "slide-up" });
+    expect(n.dataset.scrub).toBe("slide-up");
+    advance(20);
+    expect(n.style.getPropertyValue("--progress")).toBe("0.000");
+    scrollTo(1700); // top at 300 → past the end line → fully done
+    advance(20);
+    expect(n.style.getPropertyValue("--progress")).toBe("1.000");
+    stop();
+  });
+
+  it("scrub / highlight jump to the final state with reduced motion", () => {
+    setMedia({ reduced: true });
+    const a = el();
+    scrub(a);
+    expect(a.style.getPropertyValue("--progress")).toBe("1");
+    const b = el("marker");
+    highlight(b);
+    expect(b.style.getPropertyValue("--progress")).toBe("1");
+    expect(b.dataset.highlight).toBeDefined();
+  });
+
+  it("hscroll builds the structure, counts panels and restores on cleanup", () => {
+    const s = el("<i></i><i></i><i></i><i></i>");
+    const stop = hscroll(s) as () => void;
+    expect(s.dataset.hscroll).toBeDefined();
+    expect(s.style.getPropertyValue("--panels")).toBe("4");
+    expect(s.querySelector("[data-hscroll-sticky] > [data-hscroll-track]")?.children.length).toBe(4);
+    stop();
+    expect(s.querySelector("[data-hscroll-sticky]")).toBeNull();
+    expect(s.children.length).toBe(4);
+  });
+
+  it("hscroll keeps existing (SSR/React) markup untouched", () => {
+    const s = el(
+      '<div data-hscroll-sticky><div data-hscroll-track><i></i><i></i></div></div>',
+    );
+    const before = s.innerHTML;
+    const stop = hscroll(s) as () => void;
+    expect(s.innerHTML).toBe(before);
+    expect(s.style.getPropertyValue("--panels")).toBe("2");
+    stop();
+    expect(s.innerHTML).toBe(before);
+  });
+});
+
+describe("parallax", () => {
+  it("moves exactly `speed` of the distance (no self-feedback)", () => {
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 1000 });
+    const n = el();
+    // simulate layout: the rect INCLUDES the parallax offset applied so far
+    const base = 1500; // resting document top
+    vi.spyOn(n, "getBoundingClientRect").mockImplementation(() => {
+      const off = parseFloat(n.style.getPropertyValue("--parallax-y")) || 0;
+      return { top: base + off - window.scrollY, height: 200, left: 0, width: 0 } as DOMRect;
+    });
+    const stop = parallax(n, { speed: 0.2 }) as () => void;
+    fire(n); // enters the viewport
+    scrollTo(1000);
+    advance(20);
+    // centre = 1500 + 100 - 1000 - 500 = 100 → -100 * 0.2 = -20
+    expect(n.style.getPropertyValue("--parallax-y")).toBe("-20px");
+    resized(); // force a re-measure while the offset is applied
+    advance(20);
+    expect(n.style.getPropertyValue("--parallax-y")).toBe("-20px"); // stable
+    stop();
+  });
+});
+
+describe("drawSvg (extra)", () => {
+  it("skips geometry that is not painted directly (defs, clipPath, mask…)", () => {
+    const w = el(
+      '<svg><defs><clipPath id="c"><rect width="1" height="1"/></clipPath></defs><path d="M0 0L9 9"/></svg>',
+    );
+    drawSvg(w);
+    expect(w.querySelectorAll("[data-draw-shape]").length).toBe(1);
+    expect(w.querySelector("clipPath rect")?.hasAttribute("pathLength")).toBe(false);
   });
 });
 

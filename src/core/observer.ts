@@ -9,11 +9,11 @@ export type ObserveOptions = {
   once?: boolean;
 };
 
-type Target = {
+type Sub = {
   cb: (entry: IntersectionObserverEntry) => void;
   once: boolean;
 };
-type Pool = { io: IntersectionObserver; targets: WeakMap<Element, Target> };
+type Pool = { io: IntersectionObserver; subs: WeakMap<Element, Set<Sub>> };
 
 // One IntersectionObserver per (threshold, rootMargin) pair, however many elements.
 const pools = new Map<string, Pool>();
@@ -23,18 +23,20 @@ const getPool = (threshold: number, rootMargin: string): Pool => {
   const existing = pools.get(key);
   if (existing) return existing;
 
-  const targets = new WeakMap<Element, Target>();
+  const subs = new WeakMap<Element, Set<Sub>>();
   const io = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
-        const target = targets.get(entry.target);
-        if (!target) continue;
-        if (target.once && !entry.isIntersecting) continue;
-
-        target.cb(entry);
-
-        if (target.once) {
-          targets.delete(entry.target);
+        const set = subs.get(entry.target);
+        if (!set) continue;
+        // several effects may watch the same element: all of them get the entry
+        for (const sub of [...set]) {
+          if (sub.once && !entry.isIntersecting) continue;
+          sub.cb(entry);
+          if (sub.once) set.delete(sub);
+        }
+        if (set.size === 0) {
+          subs.delete(entry.target);
           io.unobserve(entry.target);
         }
       }
@@ -42,7 +44,7 @@ const getPool = (threshold: number, rootMargin: string): Pool => {
     { threshold, rootMargin },
   );
 
-  const pool = { io, targets };
+  const pool = { io, subs };
   pools.set(key, pool);
   return pool;
 };
@@ -56,12 +58,20 @@ export const observe = (
     once = true,
   }: ObserveOptions = {},
 ): Cleanup => {
-  const { io, targets } = getPool(threshold, rootMargin);
-  targets.set(el, { cb, once });
+  const { io, subs } = getPool(threshold, rootMargin);
+  const sub: Sub = { cb, once };
+  let set = subs.get(el);
+  if (!set) subs.set(el, (set = new Set()));
+  set.add(sub);
   io.observe(el);
 
   return () => {
-    targets.delete(el);
-    io.unobserve(el);
+    const current = subs.get(el);
+    if (!current) return;
+    current.delete(sub);
+    if (current.size === 0) {
+      subs.delete(el);
+      io.unobserve(el);
+    }
   };
 };

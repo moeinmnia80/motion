@@ -8,7 +8,11 @@ export type ParallaxOptions = {
   axis?: "x" | "y";
 };
 
-/** Writes --parallax-x / --parallax-y. The scroll work runs only while in view. */
+/**
+ * Writes --parallax-x / --parallax-y. The scroll work runs only while in view.
+ * The element's own offset is removed from the measurement, so the effect never
+ * feeds back into itself (speed stays exactly `speed`).
+ */
 export const parallax = (
   el: HTMLElement,
   { speed = 0.15, axis = "y" }: ParallaxOptions = {},
@@ -16,23 +20,41 @@ export const parallax = (
   if (prefersReducedMotion()) return;
 
   el.dataset.parallax = axis;
-  const prop = axis === "y" ? "--parallax-y" : "--parallax-x";
+  const y = axis === "y";
+  const prop = y ? "--parallax-y" : "--parallax-x";
   let stopScroll: Cleanup | null = null;
+  let dirty = true;
+  let pos = 0; // resting document position (no parallax offset)
+  let size = 0;
+  let current = 0;
 
-  const update = () => {
-    const r = el.getBoundingClientRect();
-    const center =
-      axis === "y"
-        ? r.top + r.height / 2 - window.innerHeight / 2
-        : r.left + r.width / 2 - window.innerWidth / 2;
-    el.style.setProperty(prop, `${(-center * speed).toFixed(1)}px`);
+  const ro = new ResizeObserver(() => (dirty = true));
+  ro.observe(el);
+  ro.observe(document.documentElement);
+
+  const task = () => {
+    if (dirty) {
+      dirty = false;
+      const r = el.getBoundingClientRect();
+      pos = (y ? r.top + window.scrollY : r.left + window.scrollX) - current;
+      size = y ? r.height : r.width;
+    }
+    const view = y ? window.innerHeight : window.innerWidth;
+    const scroll = y ? window.scrollY : window.scrollX;
+    const next = Math.round(-(pos - scroll + size / 2 - view / 2) * speed * 10) / 10;
+    if (next === current) return;
+    return () => {
+      current = next;
+      el.style.setProperty(prop, `${next}px`);
+    };
   };
 
   const stopObserve = observe(
     el,
     (entry) => {
       if (entry.isIntersecting) {
-        stopScroll ??= onScrollFrame(update);
+        dirty = true; // layout may have moved while we were asleep
+        stopScroll ??= onScrollFrame(task);
       } else {
         stopScroll?.();
         stopScroll = null;
@@ -44,6 +66,7 @@ export const parallax = (
   return () => {
     stopObserve();
     stopScroll?.();
+    ro.disconnect();
     el.style.removeProperty(prop);
   };
 };

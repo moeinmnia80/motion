@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>motion: scroll effects</title>
+<link rel="stylesheet" href="../dist/motion.css">
+<style>
+  body { margin: 0; font: 18px/1.5 system-ui, sans-serif; background: #0b0b10; color: #f4f4f8; }
+  section { min-height: 90vh; display: grid; place-content: center; gap: 1.5rem; padding: 4rem 2rem; text-align: center; }
+  h1, h2 { margin: 0; font-size: clamp(2rem, 6vw, 4.5rem); line-height: 1.05; }
+  .card { width: min(420px, 80vw); aspect-ratio: 4/3; border-radius: 20px; background: linear-gradient(135deg,#6d5efc,#ff6ec7); margin-inline: auto; }
+  .panel { display: grid; place-items: center; font-size: 4rem; font-weight: 800; }
+  .panel:nth-child(1) { background: #1d1b3a } .panel:nth-child(2) { background: #3a1b2f } .panel:nth-child(3) { background: #1b3a2c } .panel:nth-child(4) { background: #3a2f1b }
+  .fixed-bar { color: #ff6ec7 }
+</style>
+</head>
+<body>
+<div class="fixed-bar" id="bar" data-scroll-progress-bar aria-hidden="true"></div>
+
+<section>
+  <h1 id="title">Scroll effects</h1>
+  <p>Scroll down.</p>
+</section>
+
+<section>
+  <h2>Draw (needs a stroke)</h2>
+  <div id="draw">
+    <svg viewBox="0 0 220 120" width="320" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+      <path d="M10 60 C 60 0, 160 120, 210 60" />
+      <circle cx="110" cy="60" r="26" />
+    </svg>
+  </div>
+</section>
+
+<section>
+  <h2>Scrub: <span id="hl">follows your scroll</span></h2>
+  <div class="card" data-effect="slide-up"></div>
+  <div class="card" data-effect="clip-left"></div>
+  <div class="card" data-effect="rotate"></div>
+  <div class="card" data-effect="blur"></div>
+</section>
+
+<section><p id="fill" style="font-size:2.4rem;font-weight:800;max-width:24ch;margin:auto">Words light up one by one as you scroll through this sentence.</p></section>
+
+<section id="h" style="padding:0;display:block;min-height:0">
+  <div class="panel">One</div><div class="panel">Two</div><div class="panel">Three</div><div class="panel">Four</div>
+</section>
+
+<section><h2>The end</h2></section>
+
+<script type="module">
+  import { drawSvg, scrub, highlight, hscroll, scrollFill, scrollProgress, splitText } from "../dist/core/index.js";
+  splitText(document.getElementById("title"), { by: "chars", step: 30 });
+  scrollProgress(document.getElementById("bar"), { mode: "page" });
+  drawSvg(document.getElementById("draw"), { step: 250, duration: 1400 });
+  highlight(document.getElementById("hl"));
+  document.querySelectorAll("[data-effect]").forEach((el) => scrub(el, { effect: el.dataset.effect }));
+  scrollFill(document.getElementById("fill"));
+  hscroll(document.getElementById("h"));
+</script>
+</body>
+</html>

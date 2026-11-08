@@ -1,9 +1,10 @@
-import type { ComponentProps, CSSProperties, ElementType } from "react";
+import { Children, type ComponentProps, type CSSProperties, type ElementType } from "react";
 
 import type {
   CountUpOptions,
   CursorOptions,
   DrawSvgOptions,
+  HighlightOptions,
   MagneticOptions,
   MarqueeOptions,
   ObserveOptions,
@@ -12,6 +13,7 @@ import type {
   RippleOptions,
   ScrambleOptions,
   ScrollFillOptions,
+  ScrubOptions,
   SpotlightOptions,
   StaggerOptions,
   TiltOptions,
@@ -21,6 +23,8 @@ import {
   useCountUp,
   useCursor,
   useDrawSvg,
+  useHScroll,
+  useHighlight,
   useInView,
   useMagnetic,
   useMarquee,
@@ -29,6 +33,7 @@ import {
   useRipple,
   useScramble,
   useScrollProgress,
+  useScrub,
   useSpotlight,
   useStagger,
   useTilt,
@@ -418,4 +423,67 @@ export const Cursor = ({
 }: DivProps & CursorOptions) => {
   const ref = useCursor<HTMLDivElement>({ stiffness, damping, hoverSelector });
   return <div ref={ref} data-cursor="" aria-hidden="true" {...props} />;
+};
+
+/* --------------------------- Scrub / Highlight / HScroll --------------------------- */
+
+/** Scroll-scrubbed entrance. `<Scrub effect="slide-up">…</Scrub>` */
+export const Scrub = ({
+  as,
+  effect = "fade",
+  start,
+  end,
+  children,
+  ...props
+}: DivProps & As & ScrubOptions) => {
+  const ref = useScrub({ effect, start, end });
+  const Tag: ElementType = as ?? "div";
+  return (
+    <Tag ref={ref} data-scrub={effect} {...props}>
+      {children}
+    </Tag>
+  );
+};
+
+/** Marker highlight that paints itself while scrolling. Colour: --hl-color. */
+export const Highlight = ({
+  as,
+  start,
+  end,
+  children,
+  ...props
+}: Omit<ComponentProps<"span">, "ref"> & As & HighlightOptions) => {
+  const ref = useHighlight({ start, end });
+  const Tag: ElementType = as ?? "span";
+  return (
+    <Tag ref={ref} data-highlight="" {...props}>
+      {children}
+    </Tag>
+  );
+};
+
+/**
+ * Pinned section: vertical scroll moves its children (panels) horizontally.
+ * Every direct child is one panel. Rendered fully in JSX, so SSR-safe.
+ */
+export const HorizontalScroll = ({
+  as,
+  children,
+  style,
+  ...props
+}: DivProps & As) => {
+  const ref = useHScroll();
+  const Tag: ElementType = as ?? "section";
+  return (
+    <Tag
+      ref={ref}
+      data-hscroll=""
+      style={{ ...vars({ "--panels": Math.max(Children.count(children), 1) }), ...style }}
+      {...props}
+    >
+      <div data-hscroll-sticky="">
+        <div data-hscroll-track="">{children}</div>
+      </div>
+    </Tag>
+  );
 };

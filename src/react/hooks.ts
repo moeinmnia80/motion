@@ -2,6 +2,8 @@ import {
   countUp,
   cursor,
   drawSvg,
+  highlight,
+  hscroll,
   inview,
   magnetic,
   marquee,
@@ -11,6 +13,7 @@ import {
   scrollFill,
   scrollProgress,
   scrollSpy,
+  scrub,
   scramble,
   splitText,
   spotlight,
@@ -20,6 +23,7 @@ import {
   type CountUpOptions,
   type CursorOptions,
   type DrawSvgOptions,
+  type HighlightOptions,
   type MagneticOptions,
   type MarqueeOptions,
   type ObserveOptions,
@@ -30,6 +34,7 @@ import {
   type ScrollFillOptions,
   type ScrollProgressOptions,
   type ScrollSpyOptions,
+  type ScrubOptions,
   type SplitTextOptions,
   type SpotlightOptions,
   type StaggerOptions,
@@ -111,3 +116,14 @@ export const useScrollFill = <T extends HTMLElement = HTMLElement>(
 export const useScrollSpy = <T extends HTMLElement = HTMLElement>(
   options: ScrollSpyOptions = {},
 ) => useMotionRef<T, ScrollSpyOptions>(scrollSpy, options);
+
+export const useScrub = <T extends HTMLElement = HTMLElement>(
+  options: ScrubOptions = {},
+) => useMotionRef<T, ScrubOptions>(scrub, options);
+
+export const useHighlight = <T extends HTMLElement = HTMLElement>(
+  options: HighlightOptions = {},
+) => useMotionRef<T, HighlightOptions>(highlight, options);
+
+export const useHScroll = <T extends HTMLElement = HTMLElement>() =>
+  useMotionRef<T, Record<string, never>>(hscroll, {});

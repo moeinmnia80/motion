@@ -22,3 +22,6 @@ export * from "./drawSvg";
 export * from "./scrollProgress";
 export * from "./scrollFill";
 export * from "./scrollSpy";
+export * from "./scrub";
+export * from "./highlight";
+export * from "./hscroll";
