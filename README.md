@@ -52,29 +52,29 @@ Two families, and it helps to know which one you want:
 - **Trigger** effects play once when something happens (enter the viewport, hover, click).
 - **Scrub** effects are tied to the scroll position: they run forward and backward as you scroll.
 
-| Effect               | Family  | What it does                                        | Core             | React                  |
-| -------------------- | ------- | --------------------------------------------------- | ---------------- | ---------------------- |
-| Reveal               | trigger | enter-view animation, 12 variants                   | `reveal`         | `Reveal` / `useReveal` |
-| Stagger              | trigger | children reveal one after another (one observer)    | `stagger`        | `Stagger`              |
-| CountUp              | trigger | number counter, `Intl` formatting                   | `countUp`        | `CountUp`              |
-| SplitText            | trigger | words/chars animate in (accessible)                 | `splitText`      | `SplitText`            |
-| Scramble             | trigger | "decode" text effect (in view or on hover)          | `scramble`       | `Scramble`             |
-| Typewriter           | trigger | typing with caret, no layout shift                  | `typewriter`     | `Typewriter`           |
-| DrawSvg              | trigger | SVG strokes draw themselves                         | `drawSvg`        | `Draw`                 |
-| Tilt                 | pointer | 3D tilt following the mouse                         | `tilt`           | `Tilt`                 |
-| Magnetic             | pointer | element pulled towards the cursor (spring)          | `magnetic`       | `Magnetic`             |
-| Spotlight            | pointer | cursor glow travelling across a card grid           | `spotlight`      | `Spotlight`            |
-| Ripple               | pointer | click ripple                                        | `ripple`         | `Ripple`               |
-| Cursor               | pointer | spring cursor follower with hover states            | `cursor`         | `Cursor`               |
-| Marquee              | ambient | infinite marquee (CSS, JS only measures)            | `marquee`        | `Marquee`              |
-| **Scrub**            | scrub   | 11 scroll-scrubbed entrances                        | `scrub`          | `Scrub` / `useScrub`   |
-| **Highlight**        | scrub   | marker paints itself behind text                    | `highlight`      | `Highlight`            |
-| **HorizontalScroll** | scrub   | pinned section, vertical scroll → horizontal panels | `hscroll`        | `HorizontalScroll`     |
-| ScrollFill           | scrub   | words light up while scrolling                      | `scrollFill`     | `ScrollFill`           |
-| Parallax             | scrub   | depth on scroll (only while in view)                | `parallax`       | `Parallax`             |
-| ScrollProgress       | scrub   | `--progress` for the page or an element             | `scrollProgress` | `ScrollProgress`       |
-| ScrollSpy            | scrub   | marks the nav link of the section being read        | `scrollSpy`      | `useScrollSpy`         |
-| spring               | helper  | tiny damped-spring helper                           | `spring`         | n/a                    |
+| Effect | Family | What it does | Core | React |
+|---|---|---|---|---|
+| Reveal | trigger | enter-view animation, 12 variants | `reveal` | `Reveal` / `useReveal` |
+| Stagger | trigger | children reveal one after another (one observer) | `stagger` | `Stagger` |
+| CountUp | trigger | number counter, `Intl` formatting | `countUp` | `CountUp` |
+| SplitText | trigger | words/chars animate in (accessible) | `splitText` | `SplitText` |
+| Scramble | trigger | "decode" text effect (in view or on hover) | `scramble` | `Scramble` |
+| Typewriter | trigger | typing with caret, no layout shift | `typewriter` | `Typewriter` |
+| DrawSvg | trigger | SVG strokes draw themselves | `drawSvg` | `Draw` |
+| Tilt | pointer | 3D tilt following the mouse | `tilt` | `Tilt` |
+| Magnetic | pointer | element pulled towards the cursor (spring) | `magnetic` | `Magnetic` |
+| Spotlight | pointer | cursor glow travelling across a card grid | `spotlight` | `Spotlight` |
+| Ripple | pointer | click ripple | `ripple` | `Ripple` |
+| Cursor | pointer | spring cursor follower with hover states | `cursor` | `Cursor` |
+| Marquee | ambient | infinite marquee (CSS, JS only measures) | `marquee` | `Marquee` |
+| **Scrub** | scrub | 11 scroll-scrubbed entrances | `scrub` | `Scrub` / `useScrub` |
+| **Highlight** | scrub | marker paints itself behind text | `highlight` | `Highlight` |
+| **HorizontalScroll** | scrub | pinned section, vertical scroll → horizontal panels | `hscroll` | `HorizontalScroll` |
+| ScrollFill | scrub | words light up while scrolling | `scrollFill` | `ScrollFill` |
+| Parallax | scrub | depth on scroll (only while in view) | `parallax` | `Parallax` |
+| ScrollProgress | scrub | `--progress` for the page or an element | `scrollProgress` | `ScrollProgress` |
+| ScrollSpy | scrub | marks the nav link of the section being read | `scrollSpy` | `useScrollSpy` |
+| spring | helper | tiny damped-spring helper | `spring` | n/a |
 
 ### Reveal
 
@@ -100,9 +100,7 @@ where its **bottom** completes it. Defaults: `0.95` and `0.55`. Distance: `--scr
 ### Highlight
 
 ```tsx
-<h2>
-  Build <Highlight>creative</Highlight> things
-</h2>
+<h2>Build <Highlight>creative</Highlight> things</h2>
 ```
 
 Colour and thickness: `--hl-color`, `--hl-height`. Without JavaScript the highlight is fully painted.
@@ -167,9 +165,7 @@ Every effect also exists as a hook when you don't want an extra element:
 
 ```tsx
 const ref = useReveal<HTMLLIElement>({ variant: "left" });
-<li ref={ref} data-reveal="left">
-  …
-</li>; // data-reveal in JSX = no flash before hydration
+<li ref={ref} data-reveal="left">…</li>   // data-reveal in JSX = no flash before hydration
 ```
 
 Hook options must be JSON-serialisable (they are the dependency key).
@@ -199,7 +195,7 @@ A scroll task reads, then returns the function that writes:
 import { onScrollFrame } from "@moeinmnia/motion/core";
 
 const stop = onScrollFrame(() => {
-  const y = window.scrollY; // read
+  const y = window.scrollY;                       // read
   return () => el.style.setProperty("--y", `${y}`); // write
 });
 ```
@@ -226,13 +222,13 @@ and style it with CSS (`opacity: var(--progress)`).
 
 ## Troubleshooting
 
-| Problem                                | Fix                                                                                                                            |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `Draw` shows nothing                   | The shape needs a visible stroke. Add `fill="none" stroke="currentColor"` to the `<svg>`, and check you imported `styles.css`. |
-| Nothing animates at all                | Import `@moeinmnia/motion/styles.css` once in your root layout.                                                                |
-| Element is invisible and never appears | Its effect never ran: check it is rendered on the client and not inside `display: none`.                                       |
-| Scrub starts too late / too early      | Tune `start` and `end` (viewport fractions).                                                                                   |
-| Horizontal scroll doesn't pin          | A parent has `overflow: hidden/auto`; `position: sticky` needs a scrolling ancestor that is the page.                          |
+| Problem | Fix |
+|---|---|
+| `Draw` shows nothing | The shape needs a visible stroke. Add `fill="none" stroke="currentColor"` to the `<svg>`, and check you imported `styles.css`. |
+| Nothing animates at all | Import `@moeinmnia/motion/styles.css` once in your root layout. |
+| Element is invisible and never appears | Its effect never ran: check it is rendered on the client and not inside `display: none`. |
+| Scrub starts too late / too early | Tune `start` and `end` (viewport fractions). |
+| Horizontal scroll doesn't pin | A parent has `overflow: hidden/auto`; `position: sticky` needs a scrolling ancestor that is the page. |
 
 ## Browser support
 
@@ -249,7 +245,9 @@ npm run typecheck
 npm run build
 ```
 
-Try everything: build the package, then `npx serve .` and open `/demo/` (and `/demo/scroll.html` for the scroll effects).
+Scroll effects demo: `npm run demo` (bundles the core into `demo/motion.js`), then serve the **project root**
+(`npx serve .` or VS Code Live Server) and open `/demo/scroll.html`. It reads `src/motion.css` directly, so it does not
+depend on `dist/`. The older `/demo/` page needs `npm run build` first.
 
 ## License
 

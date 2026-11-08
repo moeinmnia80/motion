@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>motion: scroll effects</title>
-<link rel="stylesheet" href="../dist/motion.css">
+<link rel="stylesheet" href="../src/motion.css">
 <style>
   body { margin: 0; font: 18px/1.5 system-ui, sans-serif; background: #0b0b10; color: #f4f4f8; }
   section { min-height: 90vh; display: grid; place-content: center; gap: 1.5rem; padding: 4rem 2rem; text-align: center; }
@@ -50,7 +50,7 @@
 <section><h2>The end</h2></section>
 
 <script type="module">
-  import { drawSvg, scrub, highlight, hscroll, scrollFill, scrollProgress, splitText } from "../dist/core/index.js";
+  import { drawSvg, scrub, highlight, hscroll, scrollFill, scrollProgress, splitText } from "./motion.js";
   splitText(document.getElementById("title"), { by: "chars", step: 30 });
   scrollProgress(document.getElementById("bar"), { mode: "page" });
   drawSvg(document.getElementById("draw"), { step: 250, duration: 1400 });
