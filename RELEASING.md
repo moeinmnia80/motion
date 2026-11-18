@@ -1,6 +1,7 @@
 # Releasing @moeinmnia/motion
 
 ## First push to GitHub
+
 ```bash
 git init -b main
 git add .
@@ -10,6 +11,7 @@ git push -u origin main --force      # --force only because the old repo also he
 ```
 
 ## Publish to npm (manual)
+
 ```bash
 npm login
 npm run prepublishOnly      # typecheck + build
@@ -19,8 +21,10 @@ git tag v0.5.0 && git push --tags
 ```
 
 ## Publish to npm (automatic)
-Add an npm *Automation* token as the GitHub secret `NPM_TOKEN`, then create a GitHub Release
+
+Add an npm _Automation_ token as the GitHub secret `NPM_TOKEN`, then create a GitHub Release
 for the tag. `.github/workflows/publish.yml` runs the tests and publishes with provenance.
 
 ## Next versions
+
 `npm version minor` (or `patch`) bumps package.json and tags it. Add the entry to CHANGELOG.md first.
