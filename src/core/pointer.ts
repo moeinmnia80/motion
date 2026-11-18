@@ -1,30 +1,33 @@
+import { ticker } from "./ticker";
 import { isBrowser, type Cleanup } from "./utils";
 
 type Sub = (x: number, y: number) => void;
 
-// One pointermove listener + one rAF per frame for ALL pointer-driven effects.
 const subs = new Set<Sub>();
 const OFFSCREEN = -1e4;
 let x = OFFSCREEN;
 let y = OFFSCREEN;
-let queued = false;
+let unsubTick: Cleanup | null = null;
 let bound = false;
 
 const flush = () => {
-  queued = false;
+  unsubTick = null;
   subs.forEach((sub) => sub(x, y));
+  return false;
 };
+
 const queue = () => {
-  if (queued) return;
-  queued = true;
-  requestAnimationFrame(flush);
+  if (unsubTick) return;
+  unsubTick = ticker.read(flush);
 };
+
 const onMove = (e: PointerEvent) => {
   if (e.pointerType === "touch") return;
   x = e.clientX;
   y = e.clientY;
   queue();
 };
+
 const onLeave = () => {
   x = OFFSCREEN;
   y = OFFSCREEN;
@@ -45,6 +48,10 @@ export const onPointerFrame = (sub: Sub): Cleanup => {
       window.removeEventListener("pointermove", onMove);
       document.documentElement.removeEventListener("pointerleave", onLeave);
       bound = false;
+      if (unsubTick) {
+        unsubTick();
+        unsubTick = null;
+      }
     }
   };
 };

@@ -1,41 +1,29 @@
+import { ticker } from "./ticker";
 import type { Cleanup } from "./utils";
 
-/**
- * A task READS layout/scroll state and may return a function that WRITES.
- * All reads of a frame run first, then all writes: no layout thrashing,
- * however many scroll-driven effects are mounted.
- */
-export type ScrollTask = () => (() => void) | void;
-
-// One scroll/resize listener + one rAF per frame for ALL scroll-driven effects.
-const tasks = new Set<ScrollTask>();
-let queued = false;
+const tasks = new Set<() => void>();
+let unsubTick: Cleanup | null = null;
 let bound = false;
 
-const run = () => {
-  queued = false;
-  const writes: (() => void)[] = [];
-  tasks.forEach((task) => {
-    const write = task();
-    if (write) writes.push(write);
-  });
-  for (const write of writes) write();
+const flush = () => {
+  unsubTick = null;
+  tasks.forEach((task) => task());
+  return false;
 };
 
 const schedule = () => {
-  if (queued) return;
-  queued = true;
-  requestAnimationFrame(run);
+  if (unsubTick) return;
+  unsubTick = ticker.read(flush);
 };
 
-export const onScrollFrame = (task: ScrollTask): Cleanup => {
+export const onScrollFrame = (task: () => void): Cleanup => {
   tasks.add(task);
   if (!bound) {
     window.addEventListener("scroll", schedule, { passive: true });
     window.addEventListener("resize", schedule, { passive: true });
     bound = true;
   }
-  schedule(); // initial paint of the value
+  schedule();
 
   return () => {
     tasks.delete(task);
@@ -43,9 +31,13 @@ export const onScrollFrame = (task: ScrollTask): Cleanup => {
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
       bound = false;
+      if (unsubTick) {
+        unsubTick();
+        unsubTick = null;
+      }
     }
   };
 };
 
-/** Ask for one more frame (e.g. after layout changed without a scroll). */
-export const requestScrollFrame = schedule;
+// Aliasing onScroll to onScrollFrame to fix the import error in interactions.ts
+export const onScroll = onScrollFrame;

@@ -1,15 +1,9 @@
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, readFileSync, writeFileSync } from "node:fs";
 
-// 1) CSS
-mkdirSync("dist", { recursive: true });
-copyFileSync("src/styles/motion.css", "dist/motion.css");
+copyFileSync("src/motion.css", "dist/motion.css");
 
-// 2) tsup/rollup strips module-level directives, so re-add "use client"
-//    to the React entry (Next.js needs it as the very first statement)
+// bundlers strip module directives: put "use client" back on the React entry
 for (const file of ["dist/react/index.js", "dist/react/index.cjs"]) {
   const code = readFileSync(file, "utf8");
-  if (!code.startsWith('"use client"')) {
-    writeFileSync(file, `"use client";\n${code}`);
-  }
+  if (!code.startsWith('"use client"')) writeFileSync(file, `"use client";\n${code}`);
 }
-console.log("postbuild done");

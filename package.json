@@ -1,26 +1,26 @@
 {
   "name": "@moeinmnia/motion",
-  "version": "0.3.2",
-  "description": "Tiny, headless, dependency-free scroll & interaction animations: reveal, stagger, split/scramble/typewriter text, scroll-scrubbed effects, horizontal scroll, SVG draw, magnetic, spotlight, parallax, cursor, scroll-spy. Vanilla core + thin React adapter.",
+  "version": "0.5.0",
+  "description": "Tiny, headless, dependency-free scroll & interaction animations (reveal, split/hover-roll/type-loop text, image slice reveal, cursors, magnetic, spotlight, parallax...). Vanilla core + thin React adapter.",
   "keywords": [
     "animation",
+    "cursor",
+    "drag",
     "headless",
-    "highlight",
     "horizontal-scroll",
+    "hover",
+    "image-reveal",
     "intersection-observer",
     "magnetic",
     "parallax",
     "react",
     "reveal",
     "scroll",
-    "scroll-driven",
-    "scrollytelling",
-    "scrub",
     "spotlight",
     "spring",
-    "svg",
     "text-effects",
-    "typewriter"
+    "typewriter",
+    "view-transitions"
   ],
   "license": "MIT",
   "author": "Moein Mohammadnia <moeinmnia80@users.noreply.github.com>",
@@ -81,8 +81,7 @@
     "typecheck": "tsc --noEmit",
     "size": "node scripts/size.mjs",
     "prepublishOnly": "npm run typecheck && npm run build",
-    "test": "vitest run",
-    "demo": "esbuild src/core/index.ts --bundle --format=esm --target=es2020 --outfile=demo/motion.js"
+    "test": "vitest run"
   },
   "peerDependencies": {
     "react": ">=19"

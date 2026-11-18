@@ -8,28 +8,12 @@
  *   --split-step  --draw-duration  --draw-step
  *   --marquee-gap  --marquee-duration  --tilt-scale
  *   --spot-size  --spot-color  --ripple-color  --cursor-size  --fill-min
- *   --scrub-distance  --hl-color  --hl-height
  */
 
 :root {
   --reveal-distance: 24px;
   --reveal-duration: 700ms;
   --reveal-ease: cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* highlight base (fully painted without JS) */
-[data-highlight] {
-  background-color: transparent;
-  background-image: linear-gradient(
-    var(--hl-color, rgb(255 213 0 / 0.45)),
-    var(--hl-color, rgb(255 213 0 / 0.45))
-  );
-  background-repeat: no-repeat;
-  background-position: 0 88%;
-  background-size: 100% var(--hl-height, 0.42em);
-  color: inherit;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
 }
 
 /* Hidden states only apply when JS is enabled, so content is never lost. */
@@ -105,112 +89,131 @@
     transform: translate3d(0, 0.6em, 0);
     transition:
       opacity 0.5s ease,
-      transform 0.7s var(--reveal-ease);
+      transform 0.7s var(--reveal-ease),
+      filter 0.6s ease;
     transition-delay: calc(var(--i, 0) * var(--split-step, 40ms));
   }
   [data-split][data-inview="true"] [data-split-unit] {
     opacity: 1;
     transform: none;
+    filter: none;
+  }
+  /* variants: `splitText(el, { variant })` */
+  [data-split-variant="down"] [data-split-unit] {
+    transform: translate3d(0, -0.6em, 0);
+  }
+  [data-split-variant="fade"] [data-split-unit] {
+    transform: none;
+  }
+  [data-split-variant="blur"] [data-split-unit] {
+    filter: blur(0.3em);
+    transform: translate3d(0, 0.2em, 0);
+  }
+  [data-split-variant="scale"] [data-split-unit] {
+    transform: scale(0.3);
+  }
+  [data-split-variant="rotate"] [data-split-unit] {
+    transform-origin: 0 100%;
+    transform: translate3d(0, 0.5em, 0) rotate(10deg);
+  }
+  /* mask: units slide up from behind a clip, the classic headline reveal */
+  [data-split-variant^="mask"] [data-split-word] {
+    overflow: hidden;
+    vertical-align: top;
+    padding-bottom: 0.14em;
+    margin-bottom: -0.14em;
+  }
+  [data-split-variant="mask"] [data-split-unit] {
+    opacity: 1;
+    transform: translate3d(0, 115%, 0);
+  }
+  [data-split-variant="mask-down"] [data-split-unit] {
+    opacity: 1;
+    transform: translate3d(0, -115%, 0);
+  }
+  [data-split-variant^="mask"][data-inview="true"] [data-split-unit] {
+    transform: none;
+  }
+
+  /* ----------------------------- image reveal ----------------------------- */
+  /* slices fly in alternately from both sides, snap together, then the whole image scales up */
+  [data-img-reveal] {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    --ir-n: 7;
+    --ir-step: 70ms;
+    --ir-dur: 900ms;
+    --ir-scale-dur: 1000ms;
+    --ir-from: 0.6;
+    --ir-ease: cubic-bezier(0.77, 0, 0.175, 1);
+  }
+  [data-img-reveal] > [data-ir-base] {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    visibility: hidden; /* still sizes the box; the slices are what you see */
+  }
+  [data-ir-stage] {
+    position: absolute;
+    inset: 0;
+    transform: scale(var(--ir-from));
+    transition: transform var(--ir-scale-dur) var(--ir-ease)
+      calc(var(--ir-step) * (var(--ir-n) - 1) + var(--ir-dur) * 0.85);
+  }
+  [data-ir-strip] {
+    --dir: -1;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* slice i of n: a rectangle of the full image (0.5px overlap hides seams) */
+    clip-path: inset(
+      calc(var(--i) * 100% / var(--ir-n) - 0.5px) 0
+        calc((var(--ir-n) - var(--i) - 1) * 100% / var(--ir-n) - 0.5px) 0
+    );
+    transform: translate3d(calc(var(--dir) * 110%), 0, 0);
+    transition: transform var(--ir-dur) var(--ir-ease);
+    transition-delay: calc(var(--i) * var(--ir-step));
+    will-change: transform;
+  }
+  [data-ir-strip]:nth-child(even) {
+    --dir: 1;
+  }
+  [data-ir-axis="x"] [data-ir-strip] {
+    clip-path: inset(
+      0 calc((var(--ir-n) - var(--i) - 1) * 100% / var(--ir-n) - 0.5px) 0
+        calc(var(--i) * 100% / var(--ir-n) - 0.5px)
+    );
+    transform: translate3d(0, calc(var(--dir) * 110%), 0);
+  }
+  [data-img-reveal][data-inview="true"] [data-ir-stage] {
+    transform: none;
+  }
+  [data-img-reveal][data-inview="true"] [data-ir-strip] {
+    transform: none;
+  }
+  /* finished: drop the slices from rendering, the real <img> is shown */
+  [data-img-reveal][data-ir-done="true"] > [data-ir-base] {
+    visibility: visible;
+  }
+  [data-img-reveal][data-ir-done="true"] > [data-ir-stage] {
+    display: none;
   }
 
   /* ------------------------------ draw svg ------------------------------ */
-  /* shapes carry data-draw-shape (set by JS) and pathLength=1 */
-  [data-draw] [data-draw-shape] {
+  [data-draw] :is(path, line, polyline, polygon, circle, ellipse, rect) {
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
-  }
-  [data-draw][data-inview="true"] [data-draw-shape] {
-    stroke-dashoffset: 0;
-    /* transition only while drawing: no "un-draw" flash when JS attaches */
     transition: stroke-dashoffset var(--draw-duration, 1.6s) var(--reveal-ease);
     transition-delay: calc(var(--draw-i, 0) * var(--draw-step, 120ms));
   }
-  /* zero specificity: any stroke/fill you set (attribute, class, Tailwind) wins */
-  :where([data-draw] [data-draw-shape]:not([stroke])) {
-    stroke: currentColor;
-    fill: none;
+  [data-draw][data-inview="true"]
+    :is(path, line, polyline, polygon, circle, ellipse, rect) {
+    stroke-dashoffset: 0;
   }
-
-  /* ------------------------------- scrub ------------------------------- */
-  /* every effect reads --progress (0..1). Individual transform properties
-     (translate/scale/rotate) are used, so they compose with reveal & parallax. */
-  [data-scrub] {
-    --p: var(--progress, 0);
-    --q: calc(1 - var(--p));
-  }
-  [data-scrub="fade"] {
-    opacity: var(--p);
-  }
-  [data-scrub="scale"] {
-    opacity: var(--p);
-    scale: calc(0.8 + 0.2 * var(--p));
-  }
-  [data-scrub="zoom-out"] {
-    opacity: var(--p);
-    scale: calc(1.25 - 0.25 * var(--p));
-  }
-  [data-scrub="slide-up"] {
-    opacity: var(--p);
-    translate: 0 calc(var(--q) * var(--scrub-distance, 80px));
-  }
-  [data-scrub="slide-down"] {
-    opacity: var(--p);
-    translate: 0 calc(var(--q) * var(--scrub-distance, 80px) * -1);
-  }
-  [data-scrub="slide-left"] {
-    opacity: var(--p);
-    translate: calc(var(--q) * var(--scrub-distance, 80px) * -1) 0;
-  }
-  [data-scrub="slide-right"] {
-    opacity: var(--p);
-    translate: calc(var(--q) * var(--scrub-distance, 80px)) 0;
-  }
-  [data-scrub="rotate"] {
-    opacity: var(--p);
-    rotate: calc(var(--q) * -10deg);
-    scale: calc(0.94 + 0.06 * var(--p));
-  }
-  [data-scrub="blur"] {
-    opacity: var(--p);
-    filter: blur(calc(var(--q) * 14px));
-  }
-  [data-scrub="clip-up"] {
-    clip-path: inset(calc(var(--q) * 100%) 0 0 0);
-  }
-  [data-scrub="clip-left"] {
-    clip-path: inset(0 calc(var(--q) * 100%) 0 0);
-  }
-
-  /* ---------------------------- highlight (scrub) ---------------------------- */
-  [data-highlight] {
-    background-size: calc(var(--progress, 0) * 100%) var(--hl-height, 0.42em);
-  }
-}
-
-/* ---------------------------- horizontal scroll ---------------------------- */
-/* a tall section; a sticky viewport inside it; a strip translated by --progress */
-[data-hscroll] {
-  --panels: 3;
-  height: calc(var(--panels) * 100vh);
-  height: calc(var(--panels) * 100dvh);
-}
-[data-hscroll-sticky] {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  height: 100dvh;
-  overflow: hidden;
-}
-[data-hscroll-track] {
-  display: flex;
-  height: 100%;
-  width: calc(var(--panels) * 100%);
-  translate: calc(var(--progress, 0) * (var(--panels) - 1) / var(--panels) * -100%) 0;
-  will-change: translate;
-}
-[data-hscroll-track] > * {
-  flex: 0 0 calc(100% / var(--panels));
-  min-width: 0;
 }
 
 /* --------------------------- split text (always) --------------------------- */
@@ -361,9 +364,104 @@
   scale: 0.8;
 }
 @media (hover: none) {
-  [data-cursor] {
+  [data-cursor],
+  [data-cursor-dot] {
     display: none;
   }
+}
+
+/* cursor variants: `cursor(el, { variant })` or `data-cursor-style` on any element.
+   Theme with --cursor-size, --cursor-color, --cursor-bg. */
+[data-cursor-variant="blend"] {
+  --cursor-size: 56px;
+  background: #fff;
+  mix-blend-mode: difference;
+}
+[data-cursor-variant="blend"][data-cursor-hover="true"] {
+  scale: 1.9;
+}
+[data-cursor-variant="blend"][data-cursor-down="true"] {
+  scale: 0.7;
+}
+
+[data-cursor-variant="ring"],
+[data-cursor-variant="dual"] {
+  --cursor-size: 34px;
+  box-sizing: border-box;
+  background: transparent;
+  border: 1.5px solid var(--cursor-color, currentColor);
+  mix-blend-mode: difference;
+}
+[data-cursor-variant="ring"][data-cursor-hover="true"],
+[data-cursor-variant="dual"][data-cursor-hover="true"] {
+  scale: 1.6;
+}
+[data-cursor-variant="ring"][data-cursor-down="true"],
+[data-cursor-variant="dual"][data-cursor-down="true"] {
+  scale: 0.75;
+}
+
+[data-cursor-dot] {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10000;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: #fff;
+  mix-blend-mode: difference;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+[data-cursor-dot][data-cursor-visible="true"] {
+  opacity: 1;
+}
+
+[data-cursor-variant="label"] {
+  --cursor-size: 88px;
+  display: grid;
+  place-items: center;
+  background: none;
+  mix-blend-mode: normal;
+  color: #fff;
+  font: 600 12px/1 system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+[data-cursor-variant="label"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--cursor-bg, #111);
+  scale: 0.14;
+  transition: scale 0.4s var(--reveal-ease);
+}
+[data-cursor-variant="label"][data-cursor-has-label="true"]::before {
+  scale: 1;
+}
+[data-cursor-variant="label"][data-cursor-hover="true"],
+[data-cursor-variant="label"][data-cursor-down="true"] {
+  scale: 1;
+}
+[data-cursor-variant="label"][data-cursor-down="true"]::before {
+  scale: 0.85;
+}
+[data-cursor-text] {
+  position: relative;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+[data-cursor-has-label="true"] > [data-cursor-text] {
+  opacity: 1;
+}
+
+html[data-cursor-native="hidden"],
+html[data-cursor-native="hidden"] * {
+  cursor: none !important;
 }
 
 /* ------------------------------- marquee ------------------------------- */
@@ -406,6 +504,139 @@
   pointer-events: none;
 }
 
+/* ------------------------------ hover roll ------------------------------ */
+/* `hoverRoll(el, { to })`: every letter slides out, the next text slides in, delay grows per letter */
+[data-hover-roll] {
+  --roll-ease: cubic-bezier(0.65, 0, 0.1, 1);
+  --roll-out: -110%;
+  --roll-in: 110%;
+  display: inline-grid;
+  overflow: hidden;
+  vertical-align: bottom;
+  /* room for descenders without changing the layout height */
+  padding-block: 0.1em;
+  margin-block: -0.1em;
+}
+[data-hover-roll][data-roll-dir="down"] {
+  --roll-out: 110%;
+  --roll-in: -110%;
+}
+[data-roll-line] {
+  grid-area: 1 / 1;
+  white-space: pre;
+}
+[data-roll-char] {
+  display: inline-block;
+  transition:
+    transform var(--roll-dur, 0.55s) var(--roll-ease),
+    opacity var(--roll-dur, 0.55s) var(--roll-ease),
+    filter var(--roll-dur, 0.55s) var(--roll-ease);
+  transition-delay: calc(var(--i, 0) * var(--roll-step, 18ms));
+}
+[data-roll-line="b"] [data-roll-char] {
+  transform: translate3d(0, var(--roll-in), 0);
+}
+[data-hover-roll][data-roll-active="true"] [data-roll-line="a"] [data-roll-char] {
+  transform: translate3d(0, var(--roll-out), 0);
+}
+[data-hover-roll][data-roll-active="true"] [data-roll-line="b"] [data-roll-char] {
+  transform: none;
+}
+@media (hover: hover) {
+  [data-hover-roll]:hover [data-roll-line="a"] [data-roll-char] {
+    transform: translate3d(0, var(--roll-out), 0);
+  }
+  [data-hover-roll]:hover [data-roll-line="b"] [data-roll-char] {
+    transform: none;
+  }
+}
+/* flip: letters tip over a horizontal axis */
+[data-roll-effect="flip"] {
+  overflow: visible;
+  perspective: 500px;
+}
+[data-roll-effect="flip"] [data-roll-char] {
+  transform-origin: 50% 50%;
+  backface-visibility: hidden;
+}
+[data-roll-effect="flip"] [data-roll-line="b"] [data-roll-char] {
+  transform: rotateX(-90deg);
+  opacity: 0;
+}
+[data-roll-effect="flip"][data-roll-active="true"] [data-roll-line="a"] [data-roll-char] {
+  transform: rotateX(90deg);
+  opacity: 0;
+}
+[data-roll-effect="flip"][data-roll-active="true"] [data-roll-line="b"] [data-roll-char] {
+  transform: none;
+  opacity: 1;
+}
+@media (hover: hover) {
+  [data-roll-effect="flip"]:hover [data-roll-line="a"] [data-roll-char] {
+    transform: rotateX(90deg);
+    opacity: 0;
+  }
+  [data-roll-effect="flip"]:hover [data-roll-line="b"] [data-roll-char] {
+    transform: none;
+    opacity: 1;
+  }
+}
+/* blur: cross-fade with a small vertical drift */
+[data-roll-effect="blur"] [data-roll-line="b"] [data-roll-char] {
+  transform: translate3d(0, 30%, 0);
+  opacity: 0;
+  filter: blur(0.25em);
+}
+[data-roll-effect="blur"][data-roll-active="true"] [data-roll-line="a"] [data-roll-char] {
+  transform: translate3d(0, -30%, 0);
+  opacity: 0;
+  filter: blur(0.25em);
+}
+[data-roll-effect="blur"][data-roll-active="true"] [data-roll-line="b"] [data-roll-char] {
+  transform: none;
+  opacity: 1;
+  filter: none;
+}
+@media (hover: hover) {
+  [data-roll-effect="blur"]:hover [data-roll-line="a"] [data-roll-char] {
+    transform: translate3d(0, -30%, 0);
+    opacity: 0;
+    filter: blur(0.25em);
+  }
+  [data-roll-effect="blur"]:hover [data-roll-line="b"] [data-roll-char] {
+    transform: none;
+    opacity: 1;
+    filter: none;
+  }
+}
+
+/* ------------------------------ text utilities ------------------------------ */
+/* text that blends with whatever is behind it (white text inverts over light areas) */
+[data-blend] {
+  color: #fff;
+  mix-blend-mode: difference;
+}
+/* slow gradient sweep through the text; set --shimmer-from / --shimmer-to */
+[data-text-shimmer] {
+  background: linear-gradient(
+      100deg,
+      var(--shimmer-from, currentColor) 30%,
+      var(--shimmer-to, #8b5cf6) 50%,
+      var(--shimmer-from, currentColor) 70%
+    )
+    0 0 / 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: motion-shimmer 4s linear infinite;
+}
+@keyframes motion-shimmer {
+  to {
+    background-position: -250% 0;
+  }
+}
+
 /* ---------------------------- reduced motion ---------------------------- */
 @media (prefers-reduced-motion: reduce) {
   [data-reveal],
@@ -416,29 +647,9 @@
     clip-path: none !important;
     transition: none !important;
   }
-  [data-draw] [data-draw-shape] {
+  [data-draw] :is(path, line, polyline, polygon, circle, ellipse, rect) {
     stroke-dashoffset: 0 !important;
     transition: none !important;
-  }
-  [data-scrub] {
-    opacity: 1 !important;
-    translate: none !important;
-    scale: none !important;
-    rotate: none !important;
-    filter: none !important;
-    clip-path: none !important;
-  }
-  [data-hscroll] {
-    height: auto;
-  }
-  [data-hscroll-sticky] {
-    position: static;
-    height: auto;
-    overflow-x: auto;
-  }
-  [data-hscroll-track] {
-    translate: none !important;
-    will-change: auto;
   }
   [data-scroll-fill] [data-split-unit] {
     opacity: 1 !important;
@@ -459,7 +670,290 @@
   }
   [data-ripple-wave],
   [data-cursor],
+  [data-cursor-dot],
   [data-scroll-progress-bar] {
     display: none;
   }
+  [data-roll-char] {
+    transition: none !important;
+  }
+  [data-split-variant] [data-split-unit] {
+    filter: none !important;
+  }
+  [data-text-shimmer] {
+    animation: none;
+  }
+  [data-img-reveal] > [data-ir-base] {
+    visibility: visible !important;
+  }
+  [data-img-reveal] > [data-ir-stage] {
+    display: none !important;
+  }
+}
+
+/* -------------------------------- drag -------------------------------- */
+[data-drag] {
+  translate: var(--dx, 0px) var(--dy, 0px);
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+[data-drag][data-dragging="true"] {
+  cursor: grabbing;
+  scale: 1.04;
+  z-index: 1;
+}
+
+/* ------------------------------ scroll rail ------------------------------ */
+/* default: a plain horizontal scroller (no JS / reduced motion) */
+[data-rail-sticky] {
+  overflow-x: auto;
+}
+[data-rail-track] {
+  display: flex;
+  width: max-content;
+  gap: var(--rail-gap, 1.5rem);
+  padding-inline: var(--rail-pad, 2.5rem);
+}
+/* pinned mode: JS sets data-rail-ready, then CSS does all the moving */
+[data-rail][data-rail-ready] [data-rail-sticky] {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  height: 100vh;
+  height: 100svh;
+  overflow: hidden;
+}
+[data-rail][data-rail-ready] [data-rail-track] {
+  translate: calc(var(--progress, 0) * var(--rail-distance, 0px) * -1) 0;
+  will-change: translate;
+}
+
+/* ------------------------------ 3D Gyro Card ------------------------------ */
+[data-gyro3d] {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: perspective(var(--g3d-persp, 1000px))
+    rotateX(var(--g3d-rx, 0deg)) rotateY(var(--g3d-ry, 0deg)) scale(1);
+  transition: scale 0.35s var(--reveal-ease);
+  will-change: transform;
+}
+[data-gyro3d][data-gyro3d-active="true"] {
+  scale: var(--g3d-scale, 1.03);
+}
+[data-gyro3d-layer] {
+  transform: translateZ(var(--z, 32px));
+}
+[data-gyro3d-glare] {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(
+    280px circle at var(--g3d-gx, 50%) var(--g3d-gy, 50%),
+    rgb(255 255 255 / 0.22),
+    transparent 70%
+  );
+}
+[data-gyro3d][data-gyro3d-active="true"] [data-gyro3d-glare] {
+  opacity: 1;
+}
+
+/* ---------------------------- 3D Cylinder Ring ---------------------------- */
+[data-carousel3d] {
+  perspective: var(--c3d-persp, 1100px);
+  overflow: hidden;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+[data-carousel3d]:active {
+  cursor: grabbing;
+}
+[data-carousel3d-stage] {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  display: grid;
+  place-items: center;
+}
+[data-carousel3d-item] {
+  position: absolute;
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-gyro3d] {
+    transform: none !important;
+  }
+}
+
+/* ------------------------------ 3D Cube Stage ----------------------------- */
+[data-cube3d] {
+  perspective: var(--cube-persp, 950px);
+  display: grid;
+  place-items: center;
+}
+[data-cube3d-box] {
+  position: relative;
+  width: var(--cube-size, 220px);
+  height: var(--cube-size, 220px);
+  transform-style: preserve-3d;
+}
+[data-cube3d-face] {
+  position: absolute;
+  inset: 0;
+  backface-visibility: visible;
+}
+
+/* ------------------------------ Collapse / Accordion ------------------------------ */
+[data-collapse] {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.36s var(--reveal-ease),
+    opacity 0.28s ease;
+}
+[data-collapse] > [data-collapse-inner] {
+  overflow: hidden;
+  min-height: 0;
+}
+[data-collapse][data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+/* ------------------------------ CompareSlider ------------------------------ */
+[data-compare] {
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+  cursor: ew-resize;
+}
+[data-compare-after] {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 calc(100% - var(--compare, 50%)) 0 0);
+}
+[data-compare-handle] {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--compare, 50%);
+  width: 2px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* ------------------------------ FloatingDock ------------------------------ */
+[data-dock] {
+  display: flex;
+  align-items: flex-end;
+}
+[data-dock-item] {
+  transform-origin: 50% 100%;
+  transform: translate3d(0, var(--dock-lift, 0px), 0) scale(var(--dock-scale, 1));
+  will-change: transform;
+}
+
+/* ------------------------------ ScrollVelocity ------------------------------ */
+[data-scroll-velocity] {
+  transform: skewY(var(--scroll-skew, 0deg));
+  will-change: transform;
+}
+
+/* ------------------------------ MorphTabs ------------------------------ */
+[data-morph-tabs] {
+  position: relative;
+}
+[data-morph-indicator] {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: var(--tab-w, 0px);
+  transform: translate3d(var(--tab-x, 0px), 0, 0);
+  transition:
+    transform 0.34s var(--reveal-ease),
+    width 0.34s var(--reveal-ease);
+  pointer-events: none;
+}
+
+/* ------------------------------ Shimmer Skeleton ------------------------------ */
+[data-shimmer] {
+  position: relative;
+  overflow: hidden;
+}
+[data-shimmer]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(255 255 255 / 0.08) 50%,
+    transparent 100%
+  );
+  animation: motion-shimmer 1.6s infinite;
+  pointer-events: none;
+}
+@keyframes motion-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ------------------------------ scrub (scroll-scrubbed entrances) ------------------------------ */
+/* JS writes --progress (0..1); every look below is CSS. Only when JS runs, so content is never lost. */
+@media (scripting: enabled) {
+  [data-scrub] { --p: var(--progress, 0); }
+  [data-scrub="fade"] { opacity: var(--p); }
+  [data-scrub="scale"] { opacity: var(--p); scale: calc(0.85 + 0.15 * var(--p)); }
+  [data-scrub="zoom-out"] { opacity: var(--p); scale: calc(1.25 - 0.25 * var(--p)); }
+  [data-scrub="slide-up"] { opacity: var(--p); translate: 0 calc((1 - var(--p)) * 60px); }
+  [data-scrub="slide-down"] { opacity: var(--p); translate: 0 calc((1 - var(--p)) * -60px); }
+  [data-scrub="slide-left"] { opacity: var(--p); translate: calc((1 - var(--p)) * -80px) 0; }
+  [data-scrub="slide-right"] { opacity: var(--p); translate: calc((1 - var(--p)) * 80px) 0; }
+  [data-scrub="rotate"] { opacity: var(--p); rotate: calc((1 - var(--p)) * -8deg); }
+  [data-scrub="blur"] { opacity: var(--p); filter: blur(calc((1 - var(--p)) * 12px)); }
+  [data-scrub="clip-up"] { clip-path: inset(calc((1 - var(--p)) * 100%) 0 0 0); }
+  [data-scrub="clip-left"] { clip-path: inset(0 calc((1 - var(--p)) * 100%) 0 0); }
+}
+
+/* ------------------------------ highlight (marker stroke) ------------------------------ */
+[data-highlight] {
+  background-image: linear-gradient(var(--highlight-color, rgb(255 225 77 / 0.55)), var(--highlight-color, rgb(255 225 77 / 0.55)));
+  background-repeat: no-repeat;
+  background-position: 0 88%;
+  background-size: calc(var(--progress, 0) * 100%) 0.4em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* ------------------------------ hscroll (full-width panels) ------------------------------ */
+/* section height = panels * 100vh, so scroll speed stays 1:1. --panels comes from JS (or the React adapter). */
+[data-hscroll] { height: calc(var(--panels, 1) * 100vh); }
+[data-hscroll-sticky] { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
+[data-hscroll-track] {
+  display: flex;
+  width: calc(var(--panels, 1) * 100vw);
+  height: 100%;
+  translate: calc(var(--progress, 0) * (var(--panels, 1) - 1) * -100vw) 0;
+  will-change: translate;
+}
+[data-hscroll-track] > * { flex: 0 0 100vw; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-scrub] { opacity: 1 !important; translate: none !important; scale: none !important; rotate: none !important; filter: none !important; clip-path: none !important; }
+  [data-hscroll] { height: auto; }
+  [data-hscroll-sticky] { position: static; height: auto; overflow-x: auto; }
+  [data-hscroll-track] { translate: none; }
+  [data-highlight] { background-size: 100% 0.4em; }
 }

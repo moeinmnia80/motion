@@ -9,11 +9,11 @@ export type ObserveOptions = {
   once?: boolean;
 };
 
-type Sub = {
+type Target = {
   cb: (entry: IntersectionObserverEntry) => void;
   once: boolean;
 };
-type Pool = { io: IntersectionObserver; subs: WeakMap<Element, Set<Sub>> };
+type Pool = { io: IntersectionObserver; targets: WeakMap<Element, Target> };
 
 // One IntersectionObserver per (threshold, rootMargin) pair, however many elements.
 const pools = new Map<string, Pool>();
@@ -23,20 +23,18 @@ const getPool = (threshold: number, rootMargin: string): Pool => {
   const existing = pools.get(key);
   if (existing) return existing;
 
-  const subs = new WeakMap<Element, Set<Sub>>();
+  const targets = new WeakMap<Element, Target>();
   const io = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
-        const set = subs.get(entry.target);
-        if (!set) continue;
-        // several effects may watch the same element: all of them get the entry
-        for (const sub of [...set]) {
-          if (sub.once && !entry.isIntersecting) continue;
-          sub.cb(entry);
-          if (sub.once) set.delete(sub);
-        }
-        if (set.size === 0) {
-          subs.delete(entry.target);
+        const target = targets.get(entry.target);
+        if (!target) continue;
+        if (target.once && !entry.isIntersecting) continue;
+
+        target.cb(entry);
+
+        if (target.once) {
+          targets.delete(entry.target);
           io.unobserve(entry.target);
         }
       }
@@ -44,7 +42,7 @@ const getPool = (threshold: number, rootMargin: string): Pool => {
     { threshold, rootMargin },
   );
 
-  const pool = { io, subs };
+  const pool = { io, targets };
   pools.set(key, pool);
   return pool;
 };
@@ -58,20 +56,12 @@ export const observe = (
     once = true,
   }: ObserveOptions = {},
 ): Cleanup => {
-  const { io, subs } = getPool(threshold, rootMargin);
-  const sub: Sub = { cb, once };
-  let set = subs.get(el);
-  if (!set) subs.set(el, (set = new Set()));
-  set.add(sub);
+  const { io, targets } = getPool(threshold, rootMargin);
+  targets.set(el, { cb, once });
   io.observe(el);
 
   return () => {
-    const current = subs.get(el);
-    if (!current) return;
-    current.delete(sub);
-    if (current.size === 0) {
-      subs.delete(el);
-      io.unobserve(el);
-    }
+    targets.delete(el);
+    io.unobserve(el);
   };
 };
