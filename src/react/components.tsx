@@ -1,5 +1,5 @@
 import type { ComponentProps, CSSProperties, ElementType, ReactNode } from "react";
-import { Children } from "react";
+import { Children, useCallback } from "react";
 import type {
   Cube3DOptions,
   HighlightOptions,
@@ -569,7 +569,7 @@ export const CompareSlider = ({
   initial = 50,
   before,
   after,
-  handleClassName = "bg-gold",
+  handleClassName,
   ...props
 }: DivProps & CompareSliderOptions & { before: ReactNode; after: ReactNode; handleClassName?: string }) => {
   const ref = useCompareSlider<HTMLDivElement>({ initial });
@@ -578,7 +578,7 @@ export const CompareSlider = ({
       <div>{before}</div>
       <div data-compare-after="">{after}</div>
       <div data-compare-handle="" className={handleClassName}>
-        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border border-gold bg-ink px-1.5 py-0.5 font-mono text-[10px] text-gold shadow">
+        <span data-compare-grip="" aria-hidden="true">
           ⇄
         </span>
       </div>
@@ -616,7 +616,7 @@ export const ScrollVelocity = ({
 
 export const MorphTabs = ({
   activeSelector,
-  indicatorClassName = "bg-gold",
+  indicatorClassName,
   children,
   ...props
 }: DivProps & MorphTabsOptions & { indicatorClassName?: string }) => {
@@ -760,11 +760,15 @@ export const HoverRoll = ({
   ...props
 }: HoverRollProps) => {
   const Tag: ElementType = as ?? "span";
-  const ref = (el: HTMLElement | null) => {
-    if (!el) return;
-    const target = parent ? (el.closest(parent) ?? undefined) : undefined;
-    return hoverRoll(el, { to, direction, effect, by, step, from, target }) || undefined;
-  };
+  // stable identity: React re-runs a ref callback (and its cleanup) whenever the function changes
+  const ref = useCallback(
+    (el: HTMLElement | null) => {
+      if (!el) return;
+      const target = parent ? (el.closest(parent) ?? undefined) : undefined;
+      return hoverRoll(el, { to, direction, effect, by, step, from, target }) || undefined;
+    },
+    [to, direction, effect, by, step, from, parent],
+  );
   return (
     <Tag
       ref={ref}

@@ -17,6 +17,8 @@ Package and website are now separate repositories; this repo is the package only
 - `cursor` / `Cursor`: `variant` (`blend` `ring` `dual` `label`), per-element `data-cursor-style` and
   `data-cursor-label`, `hideNative`.
 - CSS utilities `data-blend`, `data-text-shimmer`.
+- `CompareSlider` / `MorphTabs`: removed hard-coded `gold` Tailwind classes (they leaked from the old demo site). Colors now come from `--compare-color`, `--compare-grip-bg`, `--morph-color` (default `currentColor`).
+- `HoverRoll`: stable ref callback (no re-attach on every render).
 - Removed the stale duplicate `src/styles/motion.css` (the shipped file is `src/motion.css`).
 - Core is ~10 KB gzip (was ~12 KB with the 3D canvas effects); 52 tests.
 

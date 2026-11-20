@@ -136,7 +136,7 @@ Live demos and examples: the website repo (separate from this package).
 `--draw-duration` `--draw-step` `--marquee-gap` `--marquee-duration` `--tilt-scale`
 `--spot-size` `--spot-color` `--ripple-color` `--cursor-size` `--cursor-color` `--cursor-bg` `--fill-min`
 `--rail-gap` `--rail-pad` `--roll-step` `--roll-dur` `--ir-step` `--ir-dur` `--ir-scale-dur` `--ir-from`
-`--shimmer-from` `--shimmer-to`
+`--shimmer-from` `--shimmer-to` `--compare-color` `--compare-grip-bg` `--morph-color`
 
 Text utilities (CSS only): `data-blend` (blend with the background) · `data-text-shimmer` (gradient sweep).
 
