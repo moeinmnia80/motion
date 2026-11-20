@@ -27,33 +27,33 @@ write **one** variable (`--progress`) and the per-element maths happens in CSS.
 
 ## Effects
 
-| Effect | What it does | Core | React |
-|---|---|---|---|
-| Reveal | enter-view animation, 12 variants | `reveal` | `Reveal` / `useReveal` |
-| Stagger | children reveal one after another (one observer) | `stagger` | `Stagger` |
-| CountUp | number counter, `Intl` formatting | `countUp` | `CountUp` |
-| SplitText | words/chars animate in: 8 variants, 4 orders (accessible) | `splitText` | `SplitText` |
-| HoverRoll | letters roll out and the same/another text rolls in on hover | `hoverRoll` | `HoverRoll` |
-| TypeLoop | rotating typewriter: type, hold, delete, next word | `typeLoop` | `TypeLoop` |
-| ImageReveal | image arrives as slices from alternating sides, then scales up to fill | `imageReveal` | `ImageReveal` |
-| Scramble | "decode" text effect (inview or hover) | `scramble` | `Scramble` |
-| Typewriter | typing with caret, no layout shift | `typewriter` | `Typewriter` |
-| ScrollFill | words light up while scrolling (scrub) | `scrollFill` | `ScrollFill` |
-| DrawSvg | SVG strokes draw themselves | `drawSvg` | `Draw` |
-| Parallax | depth on scroll (in-view only) | `parallax` | `Parallax` |
-| Tilt | 3D tilt following the mouse | `tilt` | `Tilt` |
-| Magnetic | element pulled towards the cursor (spring) | `magnetic` | `Magnetic` |
-| Spotlight | cursor glow that travels across a card grid | `spotlight` | `Spotlight` |
-| Ripple | click ripple | `ripple` | `Ripple` |
-| Cursor | spring follower, 5 looks: dot, blend, ring, dual, label | `cursor` | `Cursor` |
-| Marquee | infinite marquee (CSS, JS measures only) | `marquee` | `Marquee` |
-| ScrollProgress | `--progress` for page or element (scrub offsets) | `scrollProgress` | `ScrollProgress` |
-| ScrollSpy | marks the nav link of the section being read | `scrollSpy` | `useScrollSpy` |
-| Drag | pointer drag, spring release or throw | `drag` | `Drag` / `useDrag` |
-| Rail | pinned horizontal scroll (CSS-driven) | `scrollRail` | `Rail` |
-| Scrolled | `data-scrolled` + direction for headers | `scrolled` | `useScrolled` |
-| viewTransition | shared-element morphs, with fallback | `viewTransition` | — |
-| spring | tiny damped-spring helper (also exported) | `spring` | — |
+| Effect         | What it does                                                           | Core             | React                  |
+| -------------- | ---------------------------------------------------------------------- | ---------------- | ---------------------- |
+| Reveal         | enter-view animation, 12 variants                                      | `reveal`         | `Reveal` / `useReveal` |
+| Stagger        | children reveal one after another (one observer)                       | `stagger`        | `Stagger`              |
+| CountUp        | number counter, `Intl` formatting                                      | `countUp`        | `CountUp`              |
+| SplitText      | words/chars animate in: 8 variants, 4 orders (accessible)              | `splitText`      | `SplitText`            |
+| HoverRoll      | letters roll out and the same/another text rolls in on hover           | `hoverRoll`      | `HoverRoll`            |
+| TypeLoop       | rotating typewriter: type, hold, delete, next word                     | `typeLoop`       | `TypeLoop`             |
+| ImageReveal    | image arrives as slices from alternating sides, then scales up to fill | `imageReveal`    | `ImageReveal`          |
+| Scramble       | "decode" text effect (inview or hover)                                 | `scramble`       | `Scramble`             |
+| Typewriter     | typing with caret, no layout shift                                     | `typewriter`     | `Typewriter`           |
+| ScrollFill     | words light up while scrolling (scrub)                                 | `scrollFill`     | `ScrollFill`           |
+| DrawSvg        | SVG strokes draw themselves                                            | `drawSvg`        | `Draw`                 |
+| Parallax       | depth on scroll (in-view only)                                         | `parallax`       | `Parallax`             |
+| Tilt           | 3D tilt following the mouse                                            | `tilt`           | `Tilt`                 |
+| Magnetic       | element pulled towards the cursor (spring)                             | `magnetic`       | `Magnetic`             |
+| Spotlight      | cursor glow that travels across a card grid                            | `spotlight`      | `Spotlight`            |
+| Ripple         | click ripple                                                           | `ripple`         | `Ripple`               |
+| Cursor         | spring follower, 5 looks: dot, blend, ring, dual, label                | `cursor`         | `Cursor`               |
+| Marquee        | infinite marquee (CSS, JS measures only)                               | `marquee`        | `Marquee`              |
+| ScrollProgress | `--progress` for page or element (scrub offsets)                       | `scrollProgress` | `ScrollProgress`       |
+| ScrollSpy      | marks the nav link of the section being read                           | `scrollSpy`      | `useScrollSpy`         |
+| Drag           | pointer drag, spring release or throw                                  | `drag`           | `Drag` / `useDrag`     |
+| Rail           | pinned horizontal scroll (CSS-driven)                                  | `scrollRail`     | `Rail`                 |
+| Scrolled       | `data-scrolled` + direction for headers                                | `scrolled`       | `useScrolled`          |
+| viewTransition | shared-element morphs, with fallback                                   | `viewTransition` | —                      |
+| spring         | tiny damped-spring helper (also exported)                              | `spring`         | —                      |
 
 **SplitText variants:** `up` `down` `fade` `blur` `scale` `rotate` `mask` `mask-down` ·
 **order (`from`):** `start` `end` `center` `random`
@@ -116,13 +116,21 @@ extra element:
 
 ```tsx
 const ref = useReveal<HTMLLIElement>({ variant: "left" });
-<li ref={ref} data-reveal="left">…</li>   // data-reveal in JSX = no flash before hydration
+<li ref={ref} data-reveal="left">
+  …
+</li>; // data-reveal in JSX = no flash before hydration
 ```
 
 ## Vanilla
 
 ```ts
-import { reveal, stagger, scramble, magnetic, spring } from "@moeinmnia/motion/core";
+import {
+  reveal,
+  stagger,
+  scramble,
+  magnetic,
+  spring,
+} from "@moeinmnia/motion/core";
 
 const stop = reveal(document.querySelector(".card")!, { variant: "zoom" });
 stop(); // removes observers / listeners
@@ -150,17 +158,3 @@ Text utilities (CSS only): `data-blend` (blend with the background) · `data-tex
 - Pass `locale` to `CountUp` if you don't want `en-US` (same on server & client).
 - Hook options must be JSON-serialisable (they are the dependency key).
 - `Spotlight` re-queries its items on every move, so dynamically added cards just work.
-
-## Development
-
-```bash
-npm install
-npm test          # vitest + jsdom
-npm run typecheck
-npm run build
-npm run size      # gzip report
-```
-
-Releasing: see [RELEASING.md](./RELEASING.md).
-
-MIT
