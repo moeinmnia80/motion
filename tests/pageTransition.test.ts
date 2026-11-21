@@ -71,4 +71,30 @@ describe("pageLinks", () => {
     expect(variant).toHaveBeenCalledWith(expect.any(String), "/x");
     stop();
   });
+
+  it("does not depend on requestAnimationFrame while the update runs (rendering is suspended)", async () => {
+    fakeVT();
+    const raf = vi.spyOn(window, "requestAnimationFrame").mockImplementation(() => 0);
+    document.body.innerHTML = `<a id="a" href="/y">y</a>`;
+    const navigate = vi.fn((href: string) => {
+      setTimeout(() => history.pushState({}, "", href), 20);
+    });
+    const stop = pageLinks({ navigate, variant: "fade" });
+    document.getElementById("a")!.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(location.pathname).toBe("/y"));
+    await new Promise((r) => setTimeout(r, 120));
+    expect(document.documentElement.dataset.pt).toBeUndefined(); // the transition finished
+    expect(raf).not.toHaveBeenCalled();
+    raf.mockRestore();
+    stop();
+  });
+
+  it("swallows an aborted transition instead of leaving an unhandled rejection", async () => {
+    (document as Doc).startViewTransition = () => {
+      const failed = Promise.reject(new DOMException("timeout", "TimeoutError"));
+      return { finished: failed, ready: failed };
+    };
+    await expect(pageTransition(() => {}, { variant: "fade" })).resolves.toBeUndefined();
+    expect(document.documentElement.dataset.pt).toBeUndefined();
+  });
 });

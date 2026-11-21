@@ -73,7 +73,7 @@ html[data-pt="blinds"]::view-transition-new(root) {
 @keyframes pt-left-in { from { opacity: 0; transform: translate3d(-9%, 0, 0); } }
 @keyframes pt-zoom-out { to { opacity: 0; transform: scale(.94); filter: blur(8px); } }
 @keyframes pt-zoom-in { from { opacity: 0; transform: scale(1.06); filter: blur(8px); } }
-@keyframes pt-dim { to { filter: brightness(.55); transform: scale(.985); } }
+@keyframes pt-dim { to { opacity: .55; transform: scale(.985); } }
 @keyframes pt-curtain { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes pt-circle { from { clip-path: circle(0 at var(--pt-x, 50%) var(--pt-y, 50%)); } to { clip-path: circle(150vmax at var(--pt-x, 50%) var(--pt-y, 50%)); } }
 @keyframes pt-split { from { clip-path: inset(0 50% 0 50%); } to { clip-path: inset(0 0 0 0); } }
@@ -109,6 +109,11 @@ export const pageTransition = async (
     await update();
     return;
   }
+  // a hidden tab never paints, so the transition would be aborted ("Document hidden"): just update
+  if (document.hidden) {
+    await update();
+    return;
+  }
   ensureStyle();
   const root = document.documentElement;
   root.dataset.pt = variant;
@@ -121,7 +126,13 @@ export const pageTransition = async (
     root.style.removeProperty("--pt-e");
   };
   try {
-    await doc.startViewTransition(update).finished;
+    const t = doc.startViewTransition(update);
+    // These promises reject when the browser aborts a transition (timeout, hidden tab, a newer
+    // transition). The navigation itself has already happened, so that is never an error.
+    t.ready?.catch(() => {});
+    await t.finished;
+  } catch {
+    /* aborted transition: the page is already updated */
   } finally {
     clean();
   }
@@ -134,14 +145,15 @@ export type PageLinksOptions = PageTransitionOptions & {
   pathname?: () => string;
   /** return false to leave a link alone (default: every same-origin link) */
   filter?: (a: HTMLAnchorElement) => boolean;
-  /** give up waiting for the new page after this many ms (default 1500) */
+  /** give up waiting for the new page after this many ms (default 2500; browsers abort at 4000) */
   timeout?: number;
 };
 
 /**
  * Turns every same-origin link into a page transition. Works with any client router: pass its
  * `push` as `navigate`. Modified clicks, new tabs, downloads and hash-only links are left alone.
- * The snapshot of the new page is taken once `pathname()` changes and two frames have painted.
+ * The snapshot of the new page is taken once `pathname()` changes and the DOM has settled (timers,
+ * not animation frames: rendering is suspended while the browser waits for the update).
  */
 export const pageLinks = (options: PageLinksOptions): Cleanup => {
   if (!isBrowser) return () => {};
@@ -164,15 +176,17 @@ export const pageLinks = (options: PageLinksOptions): Cleanup => {
     busy = true;
     const v = typeof options.variant === "function" ? options.variant(from, to) : options.variant;
     const before = path();
+    const limit = options.timeout ?? 2500;
     void pageTransition(
       () =>
         new Promise<void>((resolve) => {
-          const done = () => requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          // While the update callback runs the browser suspends rendering, so requestAnimationFrame
+          // never fires here: waiting on it ends in "DOM update timed out". Plain timers do run.
           const t0 = performance.now();
           const poll = () => {
-            if (path() !== before) return done();
-            if (performance.now() - t0 > (options.timeout ?? 1500)) return resolve();
-            requestAnimationFrame(poll);
+            if (path() !== before) return void setTimeout(resolve, 34); // let effects and layout settle
+            if (performance.now() - t0 > limit) return resolve();
+            setTimeout(poll, 8);
           };
           void Promise.resolve(options.navigate(to)).then(poll, () => resolve());
         }),

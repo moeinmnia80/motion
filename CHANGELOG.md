@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.1
+- Fix: `pageLinks` / `usePageLinks` ended in `TimeoutError: Transition was aborted because of timeout in
+  DOM update`. While the browser waits for the update callback it suspends rendering, so the
+  `requestAnimationFrame` loop used to detect the new route never ran and every navigation hung until
+  the browser's 4 s limit. The wait now uses timers; default `timeout` is 2500 ms.
+- Fix: aborted transitions (timeout, hidden tab, a newer transition) no longer surface as unhandled
+  promise rejections; `pageTransition` skips the transition entirely in a hidden tab.
+- Perf: the `dim` step of `curtain`, `circle` and `split` animates opacity instead of a full-screen
+  `filter: brightness()`.
+
 ## 0.6.0
 - New `pageTransition` / `pageLinks` (core) and `usePageLinks` (React): page transitions on the View
   Transitions API. Variants `fade` `slide` `slide-back` `curtain` `circle` (opens from the click point)
