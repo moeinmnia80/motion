@@ -30,6 +30,7 @@ export * from "./scrolled";
 export * from "./scrollRail";
 export * from "./drag";
 export * from "./viewTransition";
+export * from "./pageTransition";
 export * from "./motion3d";
 export * from "./interactions";
 export * from "./hscroll";

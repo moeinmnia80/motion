@@ -1,4 +1,6 @@
 import {
+  pageLinks,
+  type PageLinksOptions,
   countUp,
   cursor,
   carousel3d,
@@ -71,6 +73,7 @@ import {
   type ScrubOptions,
   type TypeLoopOptions,
 } from "../core";
+import { useEffect, useRef } from "react";
 import { useMotionRef } from "./useMotionRef";
 
 /* every hook: `const ref = useX(options)` → `<element ref={ref} />` */
@@ -212,3 +215,24 @@ export const useImageReveal = <T extends HTMLElement = HTMLElement>(
 
 export const useTypeLoop = <T extends HTMLElement = HTMLElement>(options: TypeLoopOptions) =>
   useMotionRef<T, TypeLoopOptions>(typeLoop, options);
+
+/**
+ * Page transitions for every same-origin link (View Transitions API). Pass your router's `push`:
+ * `usePageLinks({ navigate: router.push, variant: "curtain" })`. Mount once, near the root.
+ */
+export const usePageLinks = (options: PageLinksOptions) => {
+  const ref = useRef(options);
+  ref.current = options;
+  useEffect(
+    () =>
+      pageLinks({
+        ...ref.current,
+        navigate: (href) => ref.current.navigate(href),
+        variant: (from, to) => {
+          const v = ref.current.variant;
+          return typeof v === "function" ? v(from, to) : (v ?? "fade");
+        },
+      }),
+    [],
+  );
+};

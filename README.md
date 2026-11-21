@@ -53,6 +53,7 @@ write **one** variable (`--progress`) and the per-element maths happens in CSS.
 | Rail           | pinned horizontal scroll (CSS-driven)                                  | `scrollRail`     | `Rail`                 |
 | Scrolled       | `data-scrolled` + direction for headers                                | `scrolled`       | `useScrolled`          |
 | viewTransition | shared-element morphs, with fallback                                   | `viewTransition` | —                      |
+| pageTransition | page transitions: curtain, circle, split, blinds, slide, zoom, fade    | `pageLinks`      | `usePageLinks`         |
 | spring         | tiny damped-spring helper (also exported)                              | `spring`         | —                      |
 
 **SplitText variants:** `up` `down` `fade` `blur` `scale` `rotate` `mask` `mask-down` ·

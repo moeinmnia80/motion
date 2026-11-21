@@ -1,6 +1,6 @@
 {
   "name": "@moeinmnia/motion",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "Tiny, headless, dependency-free scroll & interaction animations (reveal, split/hover-roll/type-loop text, image slice reveal, cursors, magnetic, spotlight, parallax...). Vanilla core + thin React adapter.",
   "keywords": [
     "animation",

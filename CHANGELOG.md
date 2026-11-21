@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+- New `pageTransition` / `pageLinks` (core) and `usePageLinks` (React): page transitions on the View
+  Transitions API. Variants `fade` `slide` `slide-back` `curtain` `circle` (opens from the click point)
+  `split` `blinds` `zoom` `none`; `variant` can be a function of `(from, to)` so the effect follows your
+  route structure. Compositor-only CSS, no JS per frame; unsupported browsers and reduced motion get a
+  plain navigation. Works with any client router (`navigate: router.push`).
+- Removed the stale `src/wasm` leftovers and the test that still imported the removed physics arena.
+
 ## 0.5.0
 Package and website are now separate repositories; this repo is the package only.
 
